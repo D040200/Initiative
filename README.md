@@ -1,7 +1,7 @@
 # Chess App
 
 <p align="center">
-  <img src="Chess/Assets.xcassets/AppIcon.appiconset/icon-1024.png" alt="Chess App Icon" width="128" height="128">
+  <img src="app_icon.png" alt="Chess App Icon" width="128" height="128">
 </p>
 
 A comprehensive chess analysis and study application built for macOS using SwiftUI. This app provides a modern, native interface for analyzing chess games, studying openings, and managing your chess database with advanced features designed for serious chess players and analysts.
