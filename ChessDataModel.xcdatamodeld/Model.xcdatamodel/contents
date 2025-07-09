@@ -8,7 +8,6 @@
         <attribute name="event" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="lastModified" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="movesData" optional="YES" attributeType="String"/>
         <attribute name="notes" optional="YES" attributeType="String"/>
         <attribute name="pgnString" optional="YES" attributeType="String"/>
         <attribute name="result" optional="YES" attributeType="String"/>

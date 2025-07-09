@@ -1,6 +1,7 @@
 // LocalDatabaseView.swift
 import SwiftUI
 import CoreData
+import UniformTypeIdentifiers
 
 struct LocalDatabaseView: View {
     @StateObject private var dataManager = ChessLocalDataManager.shared
@@ -149,7 +150,6 @@ struct LocalDatabaseView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
         .cornerRadius(10)
         .padding(.horizontal)
     }
@@ -200,19 +200,13 @@ struct LocalDatabaseView: View {
                         
                         Button {
                             // TODO: Load game in analysis view
-                            // You can implement this later to load the game in your GameAnalysisView
                         } label: {
                             Label("Analyze", systemImage: "chart.line.uptrend.xyaxis")
                         }
                         
                         Button {
                             if let pgnString = dataManager.exportGame(game) {
-                                #if os(iOS)
-                                UIPasteboard.general.string = pgnString
-                                #elseif os(macOS)
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(pgnString, forType: .string)
-                                #endif
+                                copyToClipboard(pgnString)
                             }
                         } label: {
                             Label("Copy PGN", systemImage: "doc.on.doc")
@@ -237,6 +231,15 @@ struct LocalDatabaseView: View {
             let game = filteredGames[index]
             dataManager.deleteGame(game)
         }
+    }
+    
+    private func copyToClipboard(_ text: String) {
+        #if os(iOS)
+        UIPasteboard.general.string = text
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #endif
     }
 }
 
@@ -320,7 +323,6 @@ struct ImportPGNView: View {
                         TextEditor(text: $pgnText)
                             .frame(minHeight: 200)
                             .padding(8)
-                            .background(Color(.systemGray6))
                             .cornerRadius(8)
                     }
                     
@@ -340,7 +342,7 @@ struct ImportPGNView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -413,20 +415,23 @@ struct ExportDatabaseView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
                         dismiss()
                     }
                 }
             }
         }
+        #if os(iOS)
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(items: [exportedContent])
         }
+        #endif
     }
 }
 
-// MARK: - Share Sheet
+// MARK: - Share Sheet (iOS Only)
+#if os(iOS)
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     
@@ -437,6 +442,7 @@ struct ShareSheet: UIViewControllerRepresentable {
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
+#endif
 
 // MARK: - Game Detail View
 struct GameDetailView: View {
@@ -469,13 +475,13 @@ struct GameDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         dismiss()
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Save" : "Edit") {
                         if isEditing {
                             ChessLocalDataManager.shared.updateGame(game, title: editedTitle, notes: editedNotes)
@@ -537,7 +543,6 @@ struct GameDetailView: View {
             DetailRow(label: "Created", value: game.formattedDate)
         }
         .padding()
-        .background(Color(.systemGray6))
         .cornerRadius(10)
     }
     
@@ -550,14 +555,12 @@ struct GameDetailView: View {
                 TextEditor(text: $editedNotes)
                     .frame(minHeight: 100)
                     .padding(8)
-                    .background(Color(.systemGray6))
                     .cornerRadius(8)
             } else {
                 Text(game.notes?.isEmpty == false ? game.notes! : "No notes added")
                     .foregroundColor(game.notes?.isEmpty != false ? .secondary : .primary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray6))
                     .cornerRadius(8)
             }
         }
@@ -576,7 +579,6 @@ struct GameDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxHeight: 200)
-                .background(Color(.systemGray6))
                 .cornerRadius(8)
             }
         }
@@ -634,13 +636,13 @@ struct AddGameView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         saveGame()
                     }

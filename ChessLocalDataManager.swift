@@ -1,6 +1,7 @@
 // ChessLocalDataManager.swift
 import Foundation
 import CoreData
+import SwiftUI
 
 // MARK: - Local Core Data Stack (No CloudKit)
 class ChessLocalDataManager: ObservableObject {
@@ -68,7 +69,6 @@ class ChessLocalDataManager: ObservableObject {
         gameEntity.round = pgn.tags["Round"]
         gameEntity.eco = pgn.tags["ECO"]
         gameEntity.pgnString = generatePGNString(from: pgn)
-        gameEntity.movesData = try? JSONEncoder().encode(pgn.moves)
         gameEntity.dateCreated = Date()
         gameEntity.lastModified = Date()
         
@@ -218,13 +218,6 @@ extension ChessGameEntity {
         return try? PGNParser.parse(pgnString: pgnString)
     }
     
-    var movesArray: [String] {
-        guard let movesData = movesData,
-              let moves = try? JSONDecoder().decode([String].self, from: movesData) else {
-            return []
-        }
-        return moves
-    }
     
     var displayTitle: String {
         if let title = title, !title.isEmpty {
