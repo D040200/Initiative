@@ -1,5 +1,137 @@
-// ContentView.swift
+// ContentView.swift - Enhanced with sidebar game information
 import SwiftUI
+
+// MARK: - Open Games Manager
+class OpenGamesManager: ObservableObject {
+    @Published var openGames: [ChessGameEntity] = []
+    @Published var activeGameId: UUID? = nil
+    
+    static let shared = OpenGamesManager()
+    
+    private init() {}
+    
+    func openGame(_ game: ChessGameEntity) {
+        // Don't add if already open
+        if !openGames.contains(where: { $0.id == game.id }) {
+            openGames.append(game)
+        }
+        activeGameId = game.id
+    }
+    
+    func closeGame(_ game: ChessGameEntity) {
+        openGames.removeAll { $0.id == game.id }
+        
+        // If we closed the active game, select another one or set to nil
+        if activeGameId == game.id {
+            activeGameId = openGames.first?.id
+        }
+    }
+    
+    func setActiveGame(_ game: ChessGameEntity) {
+        activeGameId = game.id
+    }
+    
+    var activeGame: ChessGameEntity? {
+        return openGames.first { $0.id == activeGameId }
+    }
+    
+    func closeAllGames() {
+        openGames.removeAll()
+        activeGameId = nil
+    }
+}
+
+// MARK: - Enhanced Game View Model
+class GameViewModel: ObservableObject {
+    @Published var game: Game = Game()
+    @Published var currentMoveIndex: Int = 0
+    @Published var pgnGame: PGN? = nil
+    @Published var errorMessage: String? = nil
+    @Published var gameTitle: String = "Opera Game"
+    
+    private var boardHistory: [Board] = []
+    
+    init() {
+        loadDefaultGame()
+    }
+    
+    private func loadDefaultGame() {
+        let samplePGNString = """
+        [Event "Opera Game"]
+        [Site "Paris"]
+        [Date "1858.00.00"]
+        [Round "?"]
+        [White "Paul Morphy"]
+        [Black "Duke Karl of Brunswick and Count Isouard"]
+        [Result "1-0"]
+        
+        1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7
+        8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7
+        14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8# 1-0
+        """
+        
+        loadGame(pgnString: samplePGNString, title: "Opera Game")
+    }
+    
+    func loadGame(from entity: ChessGameEntity) {
+        guard let pgnString = entity.pgnString else { return }
+        loadGame(pgnString: pgnString, title: entity.displayTitle)
+    }
+    
+    func loadGame(pgnString: String, title: String) {
+        do {
+            let parsedPgn = try PGNParser.parse(pgnString: pgnString)
+            self.pgnGame = parsedPgn
+            self.gameTitle = title
+            
+            if let initialBoardFromFEN = Board(fen: parsedPgn.initialFen) {
+                self.game = Game(board: initialBoardFromFEN, activeColor: .white)
+            } else {
+                self.game = Game()
+            }
+            
+            self.boardHistory = [self.game.board]
+            
+            var tempGame = self.game
+            for sanMoveString in parsedPgn.moves {
+                do {
+                    let move = try MoveParser.parse(san: sanMoveString, currentBoard: tempGame.board, activeColor: tempGame.activeColor)
+                    tempGame.makeMove(move)
+                    self.boardHistory.append(tempGame.board)
+                } catch {
+                    self.errorMessage = "Error parsing or applying move '\(sanMoveString)': \(error.localizedDescription)"
+                    break
+                }
+            }
+            
+            self.currentMoveIndex = 0
+            if let firstBoard = boardHistory.first {
+                self.game.board = firstBoard
+            }
+            
+        } catch {
+            self.errorMessage = "Error parsing PGN: \(error.localizedDescription)"
+        }
+    }
+    
+    var totalPositions: Int {
+        return boardHistory.count
+    }
+    
+    func nextPosition() {
+        if currentMoveIndex < boardHistory.count - 1 {
+            currentMoveIndex += 1
+            game.board = boardHistory[currentMoveIndex]
+        }
+    }
+    
+    func previousPosition() {
+        if currentMoveIndex > 0 {
+            currentMoveIndex -= 1
+            game.board = boardHistory[currentMoveIndex]
+        }
+    }
+}
 
 // MARK: - Sidebar Pages Enum
 enum SidebarPage: String, CaseIterable {
@@ -26,87 +158,298 @@ enum SidebarPage: String, CaseIterable {
     }
 }
 
-// MARK: - GameViewModel (unchanged)
-class GameViewModel: ObservableObject {
-    @Published var game: Game = Game()
-    @Published var currentMoveIndex: Int = 0
-    @Published var pgnGame: PGN? = nil
-    @Published var errorMessage: String? = nil
+// MARK: - Main Content View
+struct ContentView: View {
+    @State private var selectedPage: SidebarPage = .gameAnalysis
+    @StateObject private var gameViewModel = GameViewModel()
+    @StateObject private var openGamesManager = OpenGamesManager.shared
+    @StateObject private var dataManager = ChessLocalDataManager.shared
     
-    private var boardHistory: [Board] = []
-    
-    init() {
-        let samplePGNString = """
-        [Event "Opera Game"]
-        [Site "Paris"]
-        [Date "1858.00.00"]
-        [Round "?"]
-        [White "Paul Morphy"]
-        [Black "Duke Karl of Brunswick and Count Isouard"]
-        [Result "1-0"]
-        
-        1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7
-        8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7
-        14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8# 1-0
-        """
-        
-        do {
-            let parsedPgn = try PGNParser.parse(pgnString: samplePGNString)
-            self.pgnGame = parsedPgn
-            
-            if let initialBoardFromFEN = Board(fen: parsedPgn.initialFen) {
-                self.game = Game(board: initialBoardFromFEN, activeColor: .white)
-            } else {
-                self.game = Game()
-            }
-            
-            self.boardHistory.append(self.game.board)
-            
-            var tempGame = self.game
-            for sanMoveString in parsedPgn.moves {
-                do {
-                    let move = try MoveParser.parse(san: sanMoveString, currentBoard: tempGame.board, activeColor: tempGame.activeColor)
-                    tempGame.makeMove(move)
-                    self.boardHistory.append(tempGame.board)
-                } catch {
-                    self.errorMessage = "Error parsing or applying move '\(sanMoveString)': \(error.localizedDescription)"
-                    break
+    var body: some View {
+        HStack(spacing: 0) {
+            // Left Sidebar - Full Height
+            VStack(spacing: 0) {
+                // Sidebar Header
+                Text("Chess App")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(NSColor.controlBackgroundColor))
+                
+                // Navigation List
+                List(selection: $selectedPage) {
+                    Section("Main") {
+                        ForEach(SidebarPage.allCases, id: \.self) { page in
+                            Label(page.rawValue, systemImage: page.iconName)
+                                .tag(page)
+                        }
+                    }
                 }
+                .listStyle(SidebarListStyle())
             }
+            .frame(width: 250)
+            .background(Color(NSColor.controlBackgroundColor))
             
-            self.currentMoveIndex = 0
-            if let firstBoard = boardHistory.first {
-                self.game.board = firstBoard
+            // Right Content Area
+            VStack(spacing: 0) {
+                // Safari-style Tab Bar
+                if !openGamesManager.openGames.isEmpty {
+                    SafariTabBar(
+                        openGames: openGamesManager.openGames,
+                        activeGameId: openGamesManager.activeGameId,
+                        onSelectGame: { game in
+                            openGamesManager.setActiveGame(game)
+                            gameViewModel.loadGame(from: game)
+                        },
+                        onCloseGame: { game in
+                            openGamesManager.closeGame(game)
+                            if let newActiveGame = openGamesManager.activeGame {
+                                gameViewModel.loadGame(from: newActiveGame)
+                            }
+                        }
+                    )
+                }
+                
+                // Main Content
+                Group {
+                    switch selectedPage {
+                    case .gameAnalysis:
+                        if openGamesManager.activeGame != nil {
+                            GameAnalysisView()
+                                .environmentObject(gameViewModel)
+                        } else {
+                            EmptyGameAnalysisView()
+                        }
+                    case .search:
+                        SearchView()
+                    case .openingRepertoire:
+                        OpeningRepertoireView()
+                    case .endgames:
+                        EndgamesView()
+                    case .puzzles:
+                        PuzzlesView()
+                    case .database:
+                        EnhancedLocalDatabaseView()
+                    case .engine:
+                        EngineAnalysisView()
+                    case .settings:
+                        SettingsView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            
-        } catch {
-            self.errorMessage = "Error parsing PGN: \(error.localizedDescription)"
-            self.game = Game()
         }
-    }
-    
-    var totalPositions: Int {
-        return boardHistory.count
-    }
-    
-    func nextPosition() {
-        if currentMoveIndex < boardHistory.count - 1 {
-            currentMoveIndex += 1
-            game.board = boardHistory[currentMoveIndex]
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("LoadGameInAnalysis"))) { notification in
+            if let game = notification.object as? ChessGameEntity {
+                openGamesManager.openGame(game)
+                gameViewModel.loadGame(from: game)
+                selectedPage = .gameAnalysis
+            }
         }
-    }
-    
-    func previousPosition() {
-        if currentMoveIndex > 0 {
-            currentMoveIndex -= 1
-            game.board = boardHistory[currentMoveIndex]
+        .onChange(of: openGamesManager.activeGameId) { oldValue, newValue in
+            if let activeGame = openGamesManager.activeGame {
+                gameViewModel.loadGame(from: activeGame)
+            }
         }
     }
 }
 
-// MARK: - Main Content View
+// MARK: - Safari-style Tab Bar
+struct SafariTabBar: View {
+    let openGames: [ChessGameEntity]
+    let activeGameId: UUID?
+    let onSelectGame: (ChessGameEntity) -> Void
+    let onCloseGame: (ChessGameEntity) -> Void
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(openGames, id: \.id) { game in
+                SafariTabView(
+                    game: game,
+                    isActive: activeGameId == game.id,
+                    onSelect: { onSelectGame(game) },
+                    onClose: { onCloseGame(game) }
+                )
+            }
+            
+            // Fill remaining space with background
+            Spacer()
+                .frame(maxWidth: .infinity)
+                .background(Color(NSColor.controlBackgroundColor))
+        }
+        .frame(height: 36)
+        .background(Color(NSColor.controlBackgroundColor))
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(Color.gray.opacity(0.3)),
+            alignment: .bottom
+        )
+    }
+}
+
+// MARK: - Safari-style Individual Tab
+struct SafariTabView: View {
+    let game: ChessGameEntity
+    let isActive: Bool
+    let onSelect: () -> Void
+    let onClose: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            // Tab content
+            HStack(spacing: 6) {
+                // Favicon-style icon
+                Image(systemName: game.resultIcon)
+                    .foregroundColor(game.resultColor)
+                    .font(.system(size: 10))
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(game.displayTitle)
+                        .font(.system(size: 11))
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                    
+                    Text("\(game.whitePlayer ?? "?") vs \(game.blackPlayer ?? "?")")
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: 200)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                print("Safari tab clicked: \(game.displayTitle)")
+                onSelect()
+            }
+            
+            // Close button
+            Button(action: {
+                print("Safari tab close: \(game.displayTitle)")
+                onClose()
+            }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .frame(width: 14, height: 14)
+                    .background(Circle().fill(Color.clear))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .opacity(isActive ? 1.0 : 0.6)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .frame(minWidth: 180, maxWidth: 220)
+        .background(
+            SafariTabShape(isActive: isActive)
+                .fill(isActive ? Color(NSColor.controlBackgroundColor) : Color.clear)
+        )
+        .overlay(
+            SafariTabShape(isActive: isActive)
+                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+        )
+        .zIndex(isActive ? 1 : 0)
+    }
+}
+
+// MARK: - Safari Tab Shape
+struct SafariTabShape: Shape {
+    let isActive: Bool
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        
+        if isActive {
+            // Active tab - rounded top corners
+            path.move(to: CGPoint(x: 0, y: rect.maxY))
+            path.addLine(to: CGPoint(x: 8, y: rect.minY + 8))
+            path.addQuadCurve(
+                to: CGPoint(x: 16, y: rect.minY),
+                control: CGPoint(x: 8, y: rect.minY)
+            )
+            path.addLine(to: CGPoint(x: rect.maxX - 16, y: rect.minY))
+            path.addQuadCurve(
+                to: CGPoint(x: rect.maxX - 8, y: rect.minY + 8),
+                control: CGPoint(x: rect.maxX - 8, y: rect.minY)
+            )
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        } else {
+            // Inactive tab - simple rectangle
+            path.addRect(rect)
+        }
+        
+        return path
+    }
+}
+
+// MARK: - Empty Game Analysis View
+struct EmptyGameAnalysisView: View {
+    @StateObject private var dataManager = ChessLocalDataManager.shared
+    @StateObject private var openGamesManager = OpenGamesManager.shared
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            Image(systemName: "chessboard")
+                .font(.system(size: 64))
+                .foregroundColor(.secondary)
+            
+            Text("No Game Open")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("Select a game from the database to start analysis")
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            if !dataManager.savedGames.isEmpty {
+                VStack(spacing: 12) {
+                    Text("Recent Games:")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    LazyVStack(spacing: 8) {
+                        ForEach(dataManager.savedGames.prefix(5), id: \.id) { game in
+                            Button {
+                                openGamesManager.openGame(game)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(game.displayTitle)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        Text("\(game.whitePlayer ?? "Unknown") vs \(game.blackPlayer ?? "Unknown")")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: game.resultIcon)
+                                        .foregroundColor(game.resultColor)
+                                }
+                                .padding()
+                                .background(Color(NSColor.controlBackgroundColor))
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .frame(maxWidth: 400)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+// MARK: - Game Analysis View
 struct GameAnalysisView: View {
-    @StateObject private var viewModel = GameViewModel()
+    @EnvironmentObject var viewModel: GameViewModel
     @State private var boardSize: CGFloat = 350
     @State private var lastDragValue: DragGesture.Value?
     
@@ -114,7 +457,7 @@ struct GameAnalysisView: View {
     
     var body: some View {
         VStack {
-            Text("Chess Game from PGN")
+            Text(viewModel.gameTitle)
                 .font(.largeTitle)
                 .padding(.bottom, 5)
             
@@ -137,7 +480,6 @@ struct GameAnalysisView: View {
 
                 Spacer()
 
-                // Board with resizing handle
                 ZStack(alignment: .bottomTrailing) {
                     LazyVGrid(columns: columns, spacing: 0) {
                         ForEach((0..<8).reversed(), id: \.self) { rankIndex in
@@ -152,7 +494,6 @@ struct GameAnalysisView: View {
                     .border(Color.black, width: 1)
                     .frame(width: boardSize, height: boardSize, alignment: .center)
                     
-                    // Resizing Handle
                     Image(systemName: "arrow.up.left.and.arrow.down.right.circle.fill")
                         .font(.title)
                         .foregroundColor(.gray.opacity(0.8))
@@ -177,7 +518,6 @@ struct GameAnalysisView: View {
 
                 Spacer()
                 
-                // Navigation controls
                 HStack {
                     Button("Previous Position") {
                         viewModel.previousPosition()
@@ -201,40 +541,238 @@ struct GameAnalysisView: View {
                 }
                 .padding()
                 
+                Text("Result: \(pgn.result ?? "N/A")")
+                    .font(.headline)
+                    .padding(.bottom)
+                
             } else {
-                Text("No PGN game loaded.")
+                Text("No game loaded.")
             }
         }
         .padding()
     }
 }
 
-// MARK: - Placeholder Views for Sidebar Pages
+// MARK: - Enhanced Database View
+struct EnhancedLocalDatabaseView: View {
+    @StateObject private var dataManager = ChessLocalDataManager.shared
+    @StateObject private var openGamesManager = OpenGamesManager.shared
+    @State private var searchText = ""
+    @State private var selectedFilter: GameFilter = .all
+    @State private var showingImportSheet = false
+    @State private var showingGameDetail: ChessGameEntity?
+    @State private var showingAddGameSheet = false
+    @State private var showingExportSheet = false
+    
+    enum GameFilter: String, CaseIterable {
+        case all = "All Games"
+        case wins = "Wins (1-0)"
+        case losses = "Losses (0-1)"
+        case draws = "Draws (1/2-1/2)"
+        case ongoing = "Ongoing (*)"
+        
+        var predicate: NSPredicate? {
+            switch self {
+            case .all: return nil
+            case .wins: return NSPredicate(format: "result == %@", "1-0")
+            case .losses: return NSPredicate(format: "result == %@", "0-1")
+            case .draws: return NSPredicate(format: "result == %@", "1/2-1/2")
+            case .ongoing: return NSPredicate(format: "result == %@", "*")
+            }
+        }
+    }
+    
+    var filteredGames: [ChessGameEntity] {
+        var games = dataManager.savedGames
+        
+        if !searchText.isEmpty {
+            games = dataManager.searchGames(query: searchText)
+        }
+        
+        if let predicate = selectedFilter.predicate {
+            games = games.filter { game in
+                predicate.evaluate(with: game)
+            }
+        }
+        
+        return games
+    }
+    
+    var body: some View {
+        VStack {
+            // Stats header
+            HStack(spacing: 20) {
+                VStack {
+                    Text("\(dataManager.savedGames.count)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Total Games")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                VStack {
+                    Text("\(dataManager.gamesByResult("1-0").count)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+                    Text("Wins")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                VStack {
+                    Text("\(dataManager.gamesByResult("0-1").count)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.red)
+                    Text("Losses")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                VStack {
+                    Text("\(dataManager.gamesByResult("1/2-1/2").count)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                    Text("Draws")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(10)
+            .padding(.horizontal)
+            
+            // Search and filters
+            VStack {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Search games, players, events...", text: $searchText)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    
+                    if !searchText.isEmpty {
+                        Button("Clear") {
+                            searchText = ""
+                        }
+                        .font(.caption)
+                    }
+                }
+                .padding(.horizontal)
+                
+                Picker("Filter", selection: $selectedFilter) {
+                    ForEach(GameFilter.allCases, id: \.self) { filter in
+                        Text(filter.rawValue).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+            }
+            
+            // Games list
+            List {
+                ForEach(filteredGames, id: \.id) { game in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(game.displayTitle)
+                                .font(.headline)
+                                .lineLimit(1)
+                            
+                            Text("\(game.whitePlayer ?? "Unknown") vs \(game.blackPlayer ?? "Unknown")")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            HStack {
+                                if let event = game.event {
+                                    Text(event)
+                                        .font(.caption)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.1))
+                                        .cornerRadius(4)
+                                }
+                                
+                                Text(game.formattedDate)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        VStack {
+                            Image(systemName: game.resultIcon)
+                                .foregroundColor(game.resultColor)
+                                .font(.title2)
+                            
+                            Text(game.result ?? "*")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .onTapGesture {
+                        openGamesManager.openGame(game)
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("LoadGameInAnalysis"),
+                            object: game
+                        )
+                    }
+                }
+            }
+            
+            Spacer()
+        }
+        .navigationTitle("Game Database")
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    showingExportSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                
+                Button {
+                    showingImportSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                }
+                
+                Button {
+                    showingAddGameSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .sheet(isPresented: $showingImportSheet) {
+            ImportPGNView()
+        }
+        .sheet(isPresented: $showingAddGameSheet) {
+            AddGameView()
+        }
+        .sheet(isPresented: $showingExportSheet) {
+            ExportDatabaseView()
+        }
+        .sheet(item: $showingGameDetail) { game in
+            GameDetailView(game: game)
+        }
+    }
+}
+
+// MARK: - Placeholder Views
 struct SearchView: View {
     var body: some View {
         VStack {
             Text("Search")
                 .font(.largeTitle)
                 .padding()
-            
             Text("Search through your chess games and positions")
                 .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            VStack(spacing: 20) {
-                TextField("Search games...", text: .constant(""))
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                HStack {
-                    Button("By Player") { }
-                    Button("By Opening") { }
-                    Button("By Position") { }
-                }
-                .buttonStyle(.bordered)
-            }
-            .padding()
-            
             Spacer()
         }
         .padding()
@@ -247,28 +785,8 @@ struct OpeningRepertoireView: View {
             Text("Opening Repertoire")
                 .font(.largeTitle)
                 .padding()
-            
             Text("Build and study your opening repertoire")
                 .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            VStack(spacing: 15) {
-                Text("Popular Openings:")
-                    .font(.headline)
-                
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 10) {
-                    ForEach(["Sicilian Defense", "French Defense", "Caro-Kann", "Queen's Gambit", "Ruy Lopez", "English Opening"], id: \.self) { opening in
-                        Button(opening) { }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                }
-            }
-            .padding()
-            
             Spacer()
         }
         .padding()
@@ -281,28 +799,8 @@ struct EndgamesView: View {
             Text("Endgames")
                 .font(.largeTitle)
                 .padding()
-            
             Text("Master essential endgame patterns")
                 .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            VStack(spacing: 15) {
-                Text("Endgame Categories:")
-                    .font(.headline)
-                
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 10) {
-                    ForEach(["King & Pawn", "Rook Endgames", "Queen Endgames", "Bishop Endgames", "Knight Endgames", "Opposite Bishops"], id: \.self) { category in
-                        Button(category) { }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.green.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                }
-            }
-            .padding()
-            
             Spacer()
         }
         .padding()
@@ -315,52 +813,8 @@ struct PuzzlesView: View {
             Text("Tactics Puzzles")
                 .font(.largeTitle)
                 .padding()
-            
             Text("Sharpen your tactical vision")
                 .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            VStack(spacing: 20) {
-                Text("Daily Puzzle")
-                    .font(.title2)
-                
-                // Placeholder for puzzle board
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 200, height: 200)
-                    .overlay(Text("Puzzle Board"))
-                
-                HStack {
-                    Button("Show Solution") { }
-                    Button("Next Puzzle") { }
-                }
-                .buttonStyle(.bordered)
-            }
-            .padding()
-            
-            Spacer()
-        }
-        .padding()
-    }
-}
-
-struct DatabaseView: View {
-    var body: some View {
-        VStack {
-            Text("Game Database")
-                .font(.largeTitle)
-                .padding()
-            
-            Text("Browse and analyze master games")
-                .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Text("Database features coming soon...")
-                .foregroundColor(.secondary)
-                .italic()
-            
             Spacer()
         }
         .padding()
@@ -373,16 +827,8 @@ struct EngineAnalysisView: View {
             Text("Engine Analysis")
                 .font(.largeTitle)
                 .padding()
-            
             Text("Computer analysis of positions")
                 .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Text("Engine integration coming soon...")
-                .foregroundColor(.secondary)
-                .italic()
-            
             Spacer()
         }
         .padding()
@@ -395,70 +841,11 @@ struct SettingsView: View {
             Text("Settings")
                 .font(.largeTitle)
                 .padding()
-            
             Text("Customize your chess app")
                 .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Form {
-                Section("Board") {
-                    Toggle("Show coordinates", isOn: .constant(true))
-                    Toggle("Highlight last move", isOn: .constant(true))
-                }
-                
-                Section("Engine") {
-                    Stepper("Analysis depth: 15", value: .constant(15), in: 1...30)
-                    Toggle("Auto-analysis", isOn: .constant(false))
-                }
-            }
-            .frame(maxHeight: 300)
-            
             Spacer()
         }
         .padding()
-    }
-}
-
-// MARK: - Main ContentView with Sidebar
-struct ContentView: View {
-    @State private var selectedPage: SidebarPage = .gameAnalysis
-    
-    var body: some View {
-        NavigationSplitView {
-            // Sidebar
-            List(SidebarPage.allCases, id: \.self, selection: $selectedPage) { page in
-                Label(page.rawValue, systemImage: page.iconName)
-                    .tag(page)
-            }
-            .navigationTitle("Chess App")
-        } detail: {
-            // Main content area
-            Group {
-                switch selectedPage {
-                case .gameAnalysis:
-                    GameAnalysisView()
-                case .search:
-                    SearchView()
-                case .openingRepertoire:
-                    OpeningRepertoireView()
-                case .endgames:
-                    EndgamesView()
-                case .puzzles:
-                    PuzzlesView()
-                case .database:
-                    LocalDatabaseView()
-                case .engine:
-                    EngineAnalysisView()
-                case .settings:
-                    SettingsView()
-                }
-            }
-            .navigationTitle(selectedPage.rawValue)
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
-            #endif
-        }
     }
 }
 
