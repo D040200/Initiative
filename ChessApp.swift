@@ -2,9 +2,12 @@ import SwiftUI
 
 @main
 struct ChessApp: App {
+    let persistentContainer = ChessLocalDataManager.shared.persistentContainer
+    
     var body: some Scene {
         WindowGroup {
-            ContentView() // Your main view
+            ContentView()
+                .environment(\.managedObjectContext, persistentContainer.viewContext)
         }
     }
 }

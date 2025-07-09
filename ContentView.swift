@@ -1,7 +1,32 @@
 // ContentView.swift
 import SwiftUI
 
-// --- GameViewModel is unchanged ---
+// MARK: - Sidebar Pages Enum
+enum SidebarPage: String, CaseIterable {
+    case gameAnalysis = "Game Analysis"
+    case search = "Search"
+    case openingRepertoire = "Opening Repertoire"
+    case endgames = "Endgames"
+    case puzzles = "Tactics Puzzles"
+    case database = "Game Database"
+    case engine = "Engine Analysis"
+    case settings = "Settings"
+    
+    var iconName: String {
+        switch self {
+        case .gameAnalysis: return "chart.line.uptrend.xyaxis"
+        case .search: return "magnifyingglass"
+        case .openingRepertoire: return "book.fill"
+        case .endgames: return "crown.fill"
+        case .puzzles: return "puzzlepiece.fill"
+        case .database: return "folder.fill"
+        case .engine: return "cpu"
+        case .settings: return "gear"
+        }
+    }
+}
+
+// MARK: - GameViewModel (unchanged)
 class GameViewModel: ObservableObject {
     @Published var game: Game = Game()
     @Published var currentMoveIndex: Int = 0
@@ -79,21 +104,16 @@ class GameViewModel: ObservableObject {
     }
 }
 
-// MARK: - SwiftUI View (UPDATED FOR RESIZING)
-
-struct ContentView: View {
+// MARK: - Main Content View
+struct GameAnalysisView: View {
     @StateObject private var viewModel = GameViewModel()
-    
-    // --- START of RESIZING CODE ---
     @State private var boardSize: CGFloat = 350
     @State private var lastDragValue: DragGesture.Value?
-    // --- END of RESIZING CODE ---
     
     private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
     var body: some View {
         VStack {
-            // ... (Header Text is the same) ...
             Text("Chess Game from PGN")
                 .font(.largeTitle)
                 .padding(.bottom, 5)
@@ -115,11 +135,10 @@ struct ContentView: View {
                 .font(.subheadline)
                 .padding(.bottom)
 
-                Spacer() // Pushes the board to the center
+                Spacer()
 
-                // --- START of RESIZING WRAPPER ---
+                // Board with resizing handle
                 ZStack(alignment: .bottomTrailing) {
-                    // Board
                     LazyVGrid(columns: columns, spacing: 0) {
                         ForEach((0..<8).reversed(), id: \.self) { rankIndex in
                             ForEach(0..<8, id: \.self) { fileIndex in
@@ -131,7 +150,7 @@ struct ContentView: View {
                         }
                     }
                     .border(Color.black, width: 1)
-                    .frame(width: boardSize, height: boardSize, alignment: .center) // Frame controls the size
+                    .frame(width: boardSize, height: boardSize, alignment: .center)
                     
                     // Resizing Handle
                     Image(systemName: "arrow.up.left.and.arrow.down.right.circle.fill")
@@ -143,9 +162,8 @@ struct ContentView: View {
                             DragGesture()
                                 .onChanged { value in
                                     let dragAmount = (value.translation.width - (lastDragValue?.translation.width ?? 0)) + (value.translation.height - (lastDragValue?.translation.height ?? 0))
-                                    boardSize += dragAmount / 2 // Divide by 2 to reduce sensitivity
+                                    boardSize += dragAmount / 2
                                     
-                                    // Clamp the size to a reasonable min/max
                                     if boardSize < 150 { boardSize = 150 }
                                     if boardSize > 500 { boardSize = 500 }
                                     
@@ -156,16 +174,22 @@ struct ContentView: View {
                                 }
                         )
                 }
-                // --- END of RESIZING WRAPPER ---
 
-                Spacer() // Pushes the controls to the bottom
+                Spacer()
                 
-                // ... (Buttons and other info are the same) ...
+                // Navigation controls
                 HStack {
                     Button("Previous Position") {
                         viewModel.previousPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == 0)
+                    
+                    Button("Save Game") {
+                        if let pgn = viewModel.pgnGame {
+                            ChessLocalDataManager.shared.saveGame(from: pgn)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
                     
                     Text("Move \(viewModel.currentMoveIndex) of \(viewModel.totalPositions - 1)")
                         .font(.headline)
@@ -177,10 +201,6 @@ struct ContentView: View {
                 }
                 .padding()
                 
-                Text("Result: \(pgn.result ?? "N/A")")
-                    .font(.headline)
-                    .padding(.bottom)
-                
             } else {
                 Text("No PGN game loaded.")
             }
@@ -188,6 +208,260 @@ struct ContentView: View {
         .padding()
     }
 }
+
+// MARK: - Placeholder Views for Sidebar Pages
+struct SearchView: View {
+    var body: some View {
+        VStack {
+            Text("Search")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Search through your chess games and positions")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            VStack(spacing: 20) {
+                TextField("Search games...", text: .constant(""))
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                HStack {
+                    Button("By Player") { }
+                    Button("By Opening") { }
+                    Button("By Position") { }
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct OpeningRepertoireView: View {
+    var body: some View {
+        VStack {
+            Text("Opening Repertoire")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Build and study your opening repertoire")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            VStack(spacing: 15) {
+                Text("Popular Openings:")
+                    .font(.headline)
+                
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 10) {
+                    ForEach(["Sicilian Defense", "French Defense", "Caro-Kann", "Queen's Gambit", "Ruy Lopez", "English Opening"], id: \.self) { opening in
+                        Button(opening) { }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(8)
+                    }
+                }
+            }
+            .padding()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct EndgamesView: View {
+    var body: some View {
+        VStack {
+            Text("Endgames")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Master essential endgame patterns")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            VStack(spacing: 15) {
+                Text("Endgame Categories:")
+                    .font(.headline)
+                
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 10) {
+                    ForEach(["King & Pawn", "Rook Endgames", "Queen Endgames", "Bishop Endgames", "Knight Endgames", "Opposite Bishops"], id: \.self) { category in
+                        Button(category) { }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green.opacity(0.1))
+                            .cornerRadius(8)
+                    }
+                }
+            }
+            .padding()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct PuzzlesView: View {
+    var body: some View {
+        VStack {
+            Text("Tactics Puzzles")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Sharpen your tactical vision")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            VStack(spacing: 20) {
+                Text("Daily Puzzle")
+                    .font(.title2)
+                
+                // Placeholder for puzzle board
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 200, height: 200)
+                    .overlay(Text("Puzzle Board"))
+                
+                HStack {
+                    Button("Show Solution") { }
+                    Button("Next Puzzle") { }
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct DatabaseView: View {
+    var body: some View {
+        VStack {
+            Text("Game Database")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Browse and analyze master games")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Text("Database features coming soon...")
+                .foregroundColor(.secondary)
+                .italic()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct EngineAnalysisView: View {
+    var body: some View {
+        VStack {
+            Text("Engine Analysis")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Computer analysis of positions")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Text("Engine integration coming soon...")
+                .foregroundColor(.secondary)
+                .italic()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct SettingsView: View {
+    var body: some View {
+        VStack {
+            Text("Settings")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Customize your chess app")
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Form {
+                Section("Board") {
+                    Toggle("Show coordinates", isOn: .constant(true))
+                    Toggle("Highlight last move", isOn: .constant(true))
+                }
+                
+                Section("Engine") {
+                    Stepper("Analysis depth: 15", value: .constant(15), in: 1...30)
+                    Toggle("Auto-analysis", isOn: .constant(false))
+                }
+            }
+            .frame(maxHeight: 300)
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+// MARK: - Main ContentView with Sidebar
+struct ContentView: View {
+    @State private var selectedPage: SidebarPage = .gameAnalysis
+    
+    var body: some View {
+        NavigationSplitView {
+            // Sidebar
+            List(SidebarPage.allCases, id: \.self, selection: $selectedPage) { page in
+                Label(page.rawValue, systemImage: page.iconName)
+                    .tag(page)
+            }
+            .navigationTitle("Chess App")
+        } detail: {
+            // Main content area
+            Group {
+                switch selectedPage {
+                case .gameAnalysis:
+                    GameAnalysisView()
+                case .search:
+                    SearchView()
+                case .openingRepertoire:
+                    OpeningRepertoireView()
+                case .endgames:
+                    EndgamesView()
+                case .puzzles:
+                    PuzzlesView()
+                case .database:
+                    LocalDatabaseView()
+                case .engine:
+                    EngineAnalysisView()
+                case .settings:
+                    SettingsView()
+                }
+            }
+            .navigationTitle(selectedPage.rawValue)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
+        }
+    }
+}
+
 // MARK: - Preview Provider
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
