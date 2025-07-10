@@ -68,7 +68,7 @@ class GameViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var gameTitle: String = "No Game"
     
-    private var boardHistory: [Board] = []
+    var boardHistory: [Board] = []
     
     init() {
         // Don't load default game anymore - let tabs manage their own content
@@ -446,90 +446,221 @@ struct GameAnalysisView: View {
     
     private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
+    // Computed property for move list font size based on board size
+    private var moveListFontSize: CGFloat {
+        return max(10, boardSize / 35) // Scale font with board, minimum 10pt
+    }
+    
+    // Computed property for move list width based on board size
+    private var moveListWidth: CGFloat {
+        return max(200, boardSize * 0.6) // Scale width with board, minimum 200pt
+    }
+    
     var body: some View {
-        VStack {
-            Text(viewModel.gameTitle)
-                .font(.largeTitle)
-                .padding(.bottom, 5)
-            
-            if let errorMessage = viewModel.errorMessage {
-                Text("Error: \(errorMessage)")
-                    .foregroundColor(.red)
-                    .padding()
-            }
-            
-            if let pgn = viewModel.pgnGame {
-                VStack {
-                    Text("Event: \(pgn.tags["Event"] ?? "N/A")")
-                    Text("\(pgn.tags["White"] ?? "N/A") vs \(pgn.tags["Black"] ?? "N/A")")
-                    Text("Moves: \(pgn.moves.joined(separator: " "))")
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: false)
+        VStack(spacing: 0) {
+            // Game title and info
+            VStack {
+                Text(viewModel.gameTitle)
+                    .font(.largeTitle)
+                    .padding(.bottom, 5)
+                
+                if let errorMessage = viewModel.errorMessage {
+                    Text("Error: \(errorMessage)")
+                        .foregroundColor(.red)
+                        .padding()
                 }
-                .font(.subheadline)
-                .padding(.bottom)
-
-                Spacer()
-
-                ZStack(alignment: .bottomTrailing) {
-                    LazyVGrid(columns: columns, spacing: 0) {
-                        ForEach((0..<8).reversed(), id: \.self) { rankIndex in
-                            ForEach(0..<8, id: \.self) { fileIndex in
-                                let square = Square(file: File(rawValue: fileIndex)!, rank: Rank(rawValue: rankIndex)!)
-                                let piece = viewModel.game.board.piece(at: square)
-                                
-                                SquareView(square: square, piece: piece)
+                
+                if let pgn = viewModel.pgnGame {
+                    VStack {
+                        Text("Event: \(pgn.tags["Event"] ?? "N/A")")
+                        Text("\(pgn.tags["White"] ?? "N/A") vs \(pgn.tags["Black"] ?? "N/A")")
+                    }
+                    .font(.subheadline)
+                    .padding(.bottom)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Main content area with board and moves
+            if let pgn = viewModel.pgnGame {
+                HStack(spacing: 20) {
+                    // Chess board
+                    ZStack(alignment: .bottomTrailing) {
+                        LazyVGrid(columns: columns, spacing: 0) {
+                            ForEach((0..<8).reversed(), id: \.self) { rankIndex in
+                                ForEach(0..<8, id: \.self) { fileIndex in
+                                    let square = Square(file: File(rawValue: fileIndex)!, rank: Rank(rawValue: rankIndex)!)
+                                    let piece = viewModel.game.board.piece(at: square)
+                                    
+                                    SquareView(square: square, piece: piece)
+                                }
                             }
                         }
+                        .border(Color.black, width: 1)
+                        .frame(width: boardSize, height: boardSize, alignment: .center)
+                        
+                        // Resize handle
+                        Image(systemName: "arrow.up.left.and.arrow.down.right.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.gray.opacity(0.8))
+                            .background(Color.white.clipShape(Circle()))
+                            .padding(3)
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        let dragAmount = (value.translation.width - (lastDragValue?.translation.width ?? 0)) + (value.translation.height - (lastDragValue?.translation.height ?? 0))
+                                        boardSize += dragAmount / 2
+                                        
+                                        if boardSize < 200 { boardSize = 200 }
+                                        if boardSize > 600 { boardSize = 600 }
+                                        
+                                        lastDragValue = value
+                                    }
+                                    .onEnded { _ in
+                                        lastDragValue = nil
+                                    }
+                            )
                     }
-                    .border(Color.black, width: 1)
-                    .frame(width: boardSize, height: boardSize, alignment: .center)
+                    .focused($isFocused)
+                    .onKeyPress { keyPress in
+                        print("Key pressed: \(keyPress.key)")
+                        switch keyPress.key {
+                        case .leftArrow:
+                            if viewModel.currentMoveIndex > 0 {
+                                viewModel.previousPosition()
+                                return .handled
+                            }
+                        case .rightArrow:
+                            if viewModel.currentMoveIndex < viewModel.totalPositions - 1 {
+                                viewModel.nextPosition()
+                                return .handled
+                            }
+                        default:
+                            break
+                        }
+                        return .ignored
+                    }
                     
-                    Image(systemName: "arrow.up.left.and.arrow.down.right.circle.fill")
-                        .font(.title)
-                        .foregroundColor(.gray.opacity(0.8))
-                        .background(Color.white.clipShape(Circle()))
-                        .padding(3)
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    let dragAmount = (value.translation.width - (lastDragValue?.translation.width ?? 0)) + (value.translation.height - (lastDragValue?.translation.height ?? 0))
-                                    boardSize += dragAmount / 2
+                    // Moves list panel
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Moves")
+                            .font(.headline)
+                            .padding(.bottom, 4)
+                        
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                LazyVStack(alignment: .leading, spacing: 4) {
+                                    // Starting position
+                                    HStack {
+                                        Button("Start") {
+                                            viewModel.currentMoveIndex = 0
+                                            viewModel.game.board = viewModel.boardHistory.first ?? viewModel.game.board
+                                        }
+                                        .buttonStyle(.plain)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(viewModel.currentMoveIndex == 0 ? Color.blue.opacity(0.3) : Color.clear)
+                                        .cornerRadius(4)
+                                        .font(.system(size: moveListFontSize, design: .monospaced))
+                                        
+                                        Spacer()
+                                    }
+                                    .id("move-0")
                                     
-                                    if boardSize < 150 { boardSize = 150 }
-                                    if boardSize > 500 { boardSize = 500 }
-                                    
-                                    lastDragValue = value
+                                    // Move pairs
+                                    ForEach(0..<((pgn.moves.count + 1) / 2), id: \.self) { pairIndex in
+                                        HStack(spacing: 8) {
+                                            // Move number
+                                            Text("\(pairIndex + 1).")
+                                                .font(.system(size: moveListFontSize, design: .monospaced))
+                                                .foregroundColor(.secondary)
+                                                .frame(width: 30, alignment: .trailing)
+                                            
+                                            // White move
+                                            if pairIndex * 2 < pgn.moves.count {
+                                                let whiteMove = pgn.moves[pairIndex * 2]
+                                                let whiteMoveIndex = pairIndex * 2 + 1
+                                                
+                                                Button(whiteMove) {
+                                                    viewModel.currentMoveIndex = whiteMoveIndex
+                                                    if whiteMoveIndex < viewModel.boardHistory.count {
+                                                        viewModel.game.board = viewModel.boardHistory[whiteMoveIndex]
+                                                    }
+                                                }
+                                                .buttonStyle(.plain)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(viewModel.currentMoveIndex == whiteMoveIndex ? Color.blue.opacity(0.3) : Color.clear)
+                                                .cornerRadius(4)
+                                                .font(.system(size: moveListFontSize, design: .monospaced))
+                                                .id("move-\(whiteMoveIndex)")
+                                            }
+                                            
+                                            // Black move
+                                            if pairIndex * 2 + 1 < pgn.moves.count {
+                                                let blackMove = pgn.moves[pairIndex * 2 + 1]
+                                                let blackMoveIndex = pairIndex * 2 + 2
+                                                
+                                                Button(blackMove) {
+                                                    viewModel.currentMoveIndex = blackMoveIndex
+                                                    if blackMoveIndex < viewModel.boardHistory.count {
+                                                        viewModel.game.board = viewModel.boardHistory[blackMoveIndex]
+                                                    }
+                                                }
+                                                .buttonStyle(.plain)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(viewModel.currentMoveIndex == blackMoveIndex ? Color.blue.opacity(0.3) : Color.clear)
+                                                .cornerRadius(4)
+                                                .font(.system(size: moveListFontSize, design: .monospaced))
+                                                .id("move-\(blackMoveIndex)")
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                    }
                                 }
-                                .onEnded { _ in
-                                    lastDragValue = nil
+                                .padding(.horizontal, 8)
+                            }
+                            .onChange(of: viewModel.currentMoveIndex) { oldValue, newValue in
+                                // Auto-scroll to current move
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    proxy.scrollTo("move-\(newValue)", anchor: .center)
                                 }
-                        )
-                }
-                .focused($isFocused)
-                .onKeyPress { keyPress in
-                    print("Key pressed: \(keyPress.key)")
-                    switch keyPress.key {
-                    case .leftArrow:
-                        if viewModel.currentMoveIndex > 0 {
-                            viewModel.previousPosition()
-                            return .handled
+                            }
                         }
-                    case .rightArrow:
-                        if viewModel.currentMoveIndex < viewModel.totalPositions - 1 {
-                            viewModel.nextPosition()
-                            return .handled
+                        .frame(maxHeight: boardSize)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                        
+                        // Move counter and result
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Move \(viewModel.currentMoveIndex) of \(viewModel.totalPositions - 1)")
+                                .font(.system(size: moveListFontSize))
+                                .foregroundColor(.secondary)
+                            
+                            Text("Result: \(pgn.result ?? "*")")
+                                .font(.system(size: moveListFontSize))
+                                .fontWeight(.medium)
                         }
-                    default:
-                        break
                     }
-                    return .ignored
+                    .frame(width: moveListWidth)
                 }
-
+                .padding(.horizontal)
+                
                 Spacer()
                 
+                // Control buttons
                 HStack {
-                    Button("Previous Position") {
+                    Button("◀◀") {
+                        viewModel.currentMoveIndex = 0
+                        if let firstBoard = viewModel.boardHistory.first {
+                            viewModel.game.board = firstBoard
+                        }
+                    }
+                    .disabled(viewModel.currentMoveIndex == 0)
+                    
+                    Button("◀ Previous") {
                         viewModel.previousPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == 0)
@@ -542,26 +673,28 @@ struct GameAnalysisView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     
-                    Text("Move \(viewModel.currentMoveIndex) of \(viewModel.totalPositions - 1)")
-                        .font(.headline)
-                    
-                    Button("Next Position") {
+                    Button("Next ▶") {
                         viewModel.nextPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == viewModel.totalPositions - 1)
                     .keyboardShortcut(.rightArrow, modifiers: [])
+                    
+                    Button("▶▶") {
+                        viewModel.currentMoveIndex = viewModel.totalPositions - 1
+                        if let lastBoard = viewModel.boardHistory.last {
+                            viewModel.game.board = lastBoard
+                        }
+                    }
+                    .disabled(viewModel.currentMoveIndex == viewModel.totalPositions - 1)
                 }
                 .padding()
                 
-                Text("Result: \(pgn.result ?? "N/A")")
-                    .font(.headline)
-                    .padding(.bottom)
-                
             } else {
                 Text("No game loaded.")
+                    .padding()
+                Spacer()
             }
         }
-        .padding()
         .onAppear {
             // Auto-focus when the view appears
             isFocused = true
