@@ -10,6 +10,22 @@
 		3D92C7AA2E1E79E1005267E7 /* ChessLocalDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D92C7A92E1E79DE005267E7 /* ChessLocalDataManager.swift */; };
 		3D92C7AC2E1E79F4005267E7 /* LocalDatabaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D92C7AB2E1E79F0005267E7 /* LocalDatabaseView.swift */; };
 		3D92C7CF2E1E8046005267E7 /* ChessDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3D92C7CD2E1E8046005267E7 /* ChessDataModel.xcdatamodeld */; };
+		3D92C7E52E1F063A005267E7 /* Icon-App-20x20@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7D62E1F063A005267E7 /* Icon-App-20x20@2x.png */; };
+		3D92C7E62E1F063A005267E7 /* Icon-App-76x76@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7E12E1F063A005267E7 /* Icon-App-76x76@2x.png */; };
+		3D92C7E72E1F063A005267E7 /* Icon-App-60x60@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7DF2E1F063A005267E7 /* Icon-App-60x60@3x.png */; };
+		3D92C7E82E1F063A005267E7 /* Icon-App-60x60@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7DE2E1F063A005267E7 /* Icon-App-60x60@2x.png */; };
+		3D92C7E92E1F063A005267E7 /* Icon-App-20x20@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7D52E1F063A005267E7 /* Icon-App-20x20@1x.png */; };
+		3D92C7EA2E1F063A005267E7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7D42E1F063A005267E7 /* Contents.json */; };
+		3D92C7EB2E1F063A005267E7 /* Icon-App-83.5x83.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7E22E1F063A005267E7 /* Icon-App-83.5x83.5@2x.png */; };
+		3D92C7EC2E1F063A005267E7 /* Icon-App-29x29@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7D82E1F063A005267E7 /* Icon-App-29x29@1x.png */; };
+		3D92C7ED2E1F063A005267E7 /* Icon-App-20x20@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7D72E1F063A005267E7 /* Icon-App-20x20@3x.png */; };
+		3D92C7EE2E1F063A005267E7 /* Icon-App-40x40@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7DB2E1F063A005267E7 /* Icon-App-40x40@1x.png */; };
+		3D92C7EF2E1F063A005267E7 /* Icon-App-29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7D92E1F063A005267E7 /* Icon-App-29x29@2x.png */; };
+		3D92C7F02E1F063A005267E7 /* ItunesArtwork@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7E32E1F063A005267E7 /* ItunesArtwork@2x.png */; };
+		3D92C7F12E1F063A005267E7 /* Icon-App-29x29@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7DA2E1F063A005267E7 /* Icon-App-29x29@3x.png */; };
+		3D92C7F22E1F063A005267E7 /* Icon-App-40x40@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7DD2E1F063A005267E7 /* Icon-App-40x40@3x.png */; };
+		3D92C7F32E1F063A005267E7 /* Icon-App-40x40@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7DC2E1F063A005267E7 /* Icon-App-40x40@2x.png */; };
+		3D92C7F42E1F063A005267E7 /* Icon-App-76x76@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D92C7E02E1F063A005267E7 /* Icon-App-76x76@1x.png */; };
 		3DE972F12E1AE2FB00DC0CD6 /* Board.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE972F02E1AE2F900DC0CD6 /* Board.swift */; };
 		3DE972F72E1AE36500DC0CD6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE972F62E1AE36300DC0CD6 /* ContentView.swift */; };
 		3DE972F92E1AE37300DC0CD6 /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE972F82E1AE37100DC0CD6 /* Game.swift */; };
@@ -24,6 +40,22 @@
 		3D92C7A92E1E79DE005267E7 /* ChessLocalDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessLocalDataManager.swift; sourceTree = "<group>"; };
 		3D92C7AB2E1E79F0005267E7 /* LocalDatabaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabaseView.swift; sourceTree = "<group>"; };
 		3D92C7CE2E1E8046005267E7 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
+		3D92C7D42E1F063A005267E7 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+		3D92C7D52E1F063A005267E7 /* Icon-App-20x20@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-20x20@1x.png"; sourceTree = "<group>"; };
+		3D92C7D62E1F063A005267E7 /* Icon-App-20x20@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-20x20@2x.png"; sourceTree = "<group>"; };
+		3D92C7D72E1F063A005267E7 /* Icon-App-20x20@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-20x20@3x.png"; sourceTree = "<group>"; };
+		3D92C7D82E1F063A005267E7 /* Icon-App-29x29@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-29x29@1x.png"; sourceTree = "<group>"; };
+		3D92C7D92E1F063A005267E7 /* Icon-App-29x29@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-29x29@2x.png"; sourceTree = "<group>"; };
+		3D92C7DA2E1F063A005267E7 /* Icon-App-29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-29x29@3x.png"; sourceTree = "<group>"; };
+		3D92C7DB2E1F063A005267E7 /* Icon-App-40x40@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-40x40@1x.png"; sourceTree = "<group>"; };
+		3D92C7DC2E1F063A005267E7 /* Icon-App-40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-40x40@2x.png"; sourceTree = "<group>"; };
+		3D92C7DD2E1F063A005267E7 /* Icon-App-40x40@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-40x40@3x.png"; sourceTree = "<group>"; };
+		3D92C7DE2E1F063A005267E7 /* Icon-App-60x60@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-60x60@2x.png"; sourceTree = "<group>"; };
+		3D92C7DF2E1F063A005267E7 /* Icon-App-60x60@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-60x60@3x.png"; sourceTree = "<group>"; };
+		3D92C7E02E1F063A005267E7 /* Icon-App-76x76@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-76x76@1x.png"; sourceTree = "<group>"; };
+		3D92C7E12E1F063A005267E7 /* Icon-App-76x76@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-76x76@2x.png"; sourceTree = "<group>"; };
+		3D92C7E22E1F063A005267E7 /* Icon-App-83.5x83.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-83.5x83.5@2x.png"; sourceTree = "<group>"; };
+		3D92C7E32E1F063A005267E7 /* ItunesArtwork@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ItunesArtwork@2x.png"; sourceTree = "<group>"; };
 		3DE972F02E1AE2F900DC0CD6 /* Board.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Board.swift; sourceTree = "<group>"; };
 		3DE972F62E1AE36300DC0CD6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3DE972F82E1AE37100DC0CD6 /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
@@ -52,6 +84,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3D92C7E42E1F063A005267E7 /* AppIcon.appiconset */ = {
+			isa = PBXGroup;
+			children = (
+				3D92C7D42E1F063A005267E7 /* Contents.json */,
+				3D92C7D52E1F063A005267E7 /* Icon-App-20x20@1x.png */,
+				3D92C7D62E1F063A005267E7 /* Icon-App-20x20@2x.png */,
+				3D92C7D72E1F063A005267E7 /* Icon-App-20x20@3x.png */,
+				3D92C7D82E1F063A005267E7 /* Icon-App-29x29@1x.png */,
+				3D92C7D92E1F063A005267E7 /* Icon-App-29x29@2x.png */,
+				3D92C7DA2E1F063A005267E7 /* Icon-App-29x29@3x.png */,
+				3D92C7DB2E1F063A005267E7 /* Icon-App-40x40@1x.png */,
+				3D92C7DC2E1F063A005267E7 /* Icon-App-40x40@2x.png */,
+				3D92C7DD2E1F063A005267E7 /* Icon-App-40x40@3x.png */,
+				3D92C7DE2E1F063A005267E7 /* Icon-App-60x60@2x.png */,
+				3D92C7DF2E1F063A005267E7 /* Icon-App-60x60@3x.png */,
+				3D92C7E02E1F063A005267E7 /* Icon-App-76x76@1x.png */,
+				3D92C7E12E1F063A005267E7 /* Icon-App-76x76@2x.png */,
+				3D92C7E22E1F063A005267E7 /* Icon-App-83.5x83.5@2x.png */,
+				3D92C7E32E1F063A005267E7 /* ItunesArtwork@2x.png */,
+			);
+			path = AppIcon.appiconset;
+			sourceTree = "<group>";
+		};
 		3DE972D12E19679500DC0CD6 = {
 			isa = PBXGroup;
 			children = (
@@ -67,6 +122,7 @@
 				3DE972FC2E1AE38F00DC0CD6 /* PGN.swift */,
 				3D92C7A02E1E78AD005267E7 /* Chess.app */,
 				3D92C7CD2E1E8046005267E7 /* ChessDataModel.xcdatamodeld */,
+				3D92C7E42E1F063A005267E7 /* AppIcon.appiconset */,
 			);
 			sourceTree = "<group>";
 		};
@@ -135,6 +191,22 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D92C7E52E1F063A005267E7 /* Icon-App-20x20@2x.png in Resources */,
+				3D92C7E62E1F063A005267E7 /* Icon-App-76x76@2x.png in Resources */,
+				3D92C7E72E1F063A005267E7 /* Icon-App-60x60@3x.png in Resources */,
+				3D92C7E82E1F063A005267E7 /* Icon-App-60x60@2x.png in Resources */,
+				3D92C7E92E1F063A005267E7 /* Icon-App-20x20@1x.png in Resources */,
+				3D92C7EA2E1F063A005267E7 /* Contents.json in Resources */,
+				3D92C7EB2E1F063A005267E7 /* Icon-App-83.5x83.5@2x.png in Resources */,
+				3D92C7EC2E1F063A005267E7 /* Icon-App-29x29@1x.png in Resources */,
+				3D92C7ED2E1F063A005267E7 /* Icon-App-20x20@3x.png in Resources */,
+				3D92C7EE2E1F063A005267E7 /* Icon-App-40x40@1x.png in Resources */,
+				3D92C7EF2E1F063A005267E7 /* Icon-App-29x29@2x.png in Resources */,
+				3D92C7F02E1F063A005267E7 /* ItunesArtwork@2x.png in Resources */,
+				3D92C7F12E1F063A005267E7 /* Icon-App-29x29@3x.png in Resources */,
+				3D92C7F22E1F063A005267E7 /* Icon-App-40x40@3x.png in Resources */,
+				3D92C7F32E1F063A005267E7 /* Icon-App-40x40@2x.png in Resources */,
+				3D92C7F42E1F063A005267E7 /* Icon-App-76x76@1x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,6 +352,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Chess/Chess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -287,6 +360,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Chess/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.educational-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -319,6 +393,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Chess/Chess.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -326,6 +401,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Chess/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.educational-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

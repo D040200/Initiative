@@ -452,6 +452,7 @@ struct GameAnalysisView: View {
     @EnvironmentObject var viewModel: GameViewModel
     @State private var boardSize: CGFloat = 350
     @State private var lastDragValue: DragGesture.Value?
+    @FocusState private var isFocused: Bool
     
     private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
@@ -515,6 +516,25 @@ struct GameAnalysisView: View {
                                 }
                         )
                 }
+                .focused($isFocused)
+                .onKeyPress { keyPress in
+                    print("Key pressed: \(keyPress.key)")
+                    switch keyPress.key {
+                    case .leftArrow:
+                        if viewModel.currentMoveIndex > 0 {
+                            viewModel.previousPosition()
+                            return .handled
+                        }
+                    case .rightArrow:
+                        if viewModel.currentMoveIndex < viewModel.totalPositions - 1 {
+                            viewModel.nextPosition()
+                            return .handled
+                        }
+                    default:
+                        break
+                    }
+                    return .ignored
+                }
 
                 Spacer()
                 
@@ -523,6 +543,7 @@ struct GameAnalysisView: View {
                         viewModel.previousPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == 0)
+                    .keyboardShortcut(.leftArrow, modifiers: [])
                     
                     Button("Save Game") {
                         if let pgn = viewModel.pgnGame {
@@ -538,6 +559,7 @@ struct GameAnalysisView: View {
                         viewModel.nextPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == viewModel.totalPositions - 1)
+                    .keyboardShortcut(.rightArrow, modifiers: [])
                 }
                 .padding()
                 
@@ -550,6 +572,14 @@ struct GameAnalysisView: View {
             }
         }
         .padding()
+        .onAppear {
+            // Auto-focus when the view appears
+            isFocused = true
+        }
+        .onTapGesture {
+            // Re-focus when user clicks anywhere in the view
+            isFocused = true
+        }
     }
 }
 
