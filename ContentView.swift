@@ -1,10 +1,23 @@
-// ContentView.swift - Enhanced with sidebar game information
+// ContentView.swift - Enhanced with per-tab state management
 import SwiftUI
+
+// MARK: - Game Tab Data
+struct GameTab: Identifiable {
+    let id = UUID()
+    let game: ChessGameEntity
+    let viewModel: GameViewModel
+    
+    init(game: ChessGameEntity) {
+        self.game = game
+        self.viewModel = GameViewModel()
+        self.viewModel.loadGame(from: game)
+    }
+}
 
 // MARK: - Open Games Manager
 class OpenGamesManager: ObservableObject {
-    @Published var openGames: [ChessGameEntity] = []
-    @Published var activeGameId: UUID? = nil
+    @Published var openTabs: [GameTab] = []
+    @Published var activeTabId: UUID? = nil
     
     static let shared = OpenGamesManager()
     
@@ -12,32 +25,38 @@ class OpenGamesManager: ObservableObject {
     
     func openGame(_ game: ChessGameEntity) {
         // Don't add if already open
-        if !openGames.contains(where: { $0.id == game.id }) {
-            openGames.append(game)
+        if !openTabs.contains(where: { $0.game.id == game.id }) {
+            let newTab = GameTab(game: game)
+            openTabs.append(newTab)
+            activeTabId = newTab.id
+        } else {
+            // If already open, just activate it
+            if let existingTab = openTabs.first(where: { $0.game.id == game.id }) {
+                activeTabId = existingTab.id
+            }
         }
-        activeGameId = game.id
     }
     
-    func closeGame(_ game: ChessGameEntity) {
-        openGames.removeAll { $0.id == game.id }
+    func closeTab(_ tab: GameTab) {
+        openTabs.removeAll { $0.id == tab.id }
         
-        // If we closed the active game, select another one or set to nil
-        if activeGameId == game.id {
-            activeGameId = openGames.first?.id
+        // If we closed the active tab, select another one or set to nil
+        if activeTabId == tab.id {
+            activeTabId = openTabs.first?.id
         }
     }
     
-    func setActiveGame(_ game: ChessGameEntity) {
-        activeGameId = game.id
+    func setActiveTab(_ tab: GameTab) {
+        activeTabId = tab.id
     }
     
-    var activeGame: ChessGameEntity? {
-        return openGames.first { $0.id == activeGameId }
+    var activeTab: GameTab? {
+        return openTabs.first { $0.id == activeTabId }
     }
     
-    func closeAllGames() {
-        openGames.removeAll()
-        activeGameId = nil
+    func closeAllTabs() {
+        openTabs.removeAll()
+        activeTabId = nil
     }
 }
 
@@ -47,30 +66,12 @@ class GameViewModel: ObservableObject {
     @Published var currentMoveIndex: Int = 0
     @Published var pgnGame: PGN? = nil
     @Published var errorMessage: String? = nil
-    @Published var gameTitle: String = "Opera Game"
+    @Published var gameTitle: String = "No Game"
     
     private var boardHistory: [Board] = []
     
     init() {
-        loadDefaultGame()
-    }
-    
-    private func loadDefaultGame() {
-        let samplePGNString = """
-        [Event "Opera Game"]
-        [Site "Paris"]
-        [Date "1858.00.00"]
-        [Round "?"]
-        [White "Paul Morphy"]
-        [Black "Duke Karl of Brunswick and Count Isouard"]
-        [Result "1-0"]
-        
-        1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7
-        8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7
-        14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8# 1-0
-        """
-        
-        loadGame(pgnString: samplePGNString, title: "Opera Game")
+        // Don't load default game anymore - let tabs manage their own content
     }
     
     func loadGame(from entity: ChessGameEntity) {
@@ -161,7 +162,6 @@ enum SidebarPage: String, CaseIterable {
 // MARK: - Main Content View
 struct ContentView: View {
     @State private var selectedPage: SidebarPage = .gameAnalysis
-    @StateObject private var gameViewModel = GameViewModel()
     @StateObject private var openGamesManager = OpenGamesManager.shared
     @StateObject private var dataManager = ChessLocalDataManager.shared
     
@@ -194,19 +194,15 @@ struct ContentView: View {
             // Right Content Area
             VStack(spacing: 0) {
                 // Safari-style Tab Bar
-                if !openGamesManager.openGames.isEmpty {
+                if !openGamesManager.openTabs.isEmpty {
                     SafariTabBar(
-                        openGames: openGamesManager.openGames,
-                        activeGameId: openGamesManager.activeGameId,
-                        onSelectGame: { game in
-                            openGamesManager.setActiveGame(game)
-                            gameViewModel.loadGame(from: game)
+                        openTabs: openGamesManager.openTabs,
+                        activeTabId: openGamesManager.activeTabId,
+                        onSelectTab: { tab in
+                            openGamesManager.setActiveTab(tab)
                         },
-                        onCloseGame: { game in
-                            openGamesManager.closeGame(game)
-                            if let newActiveGame = openGamesManager.activeGame {
-                                gameViewModel.loadGame(from: newActiveGame)
-                            }
+                        onCloseTab: { tab in
+                            openGamesManager.closeTab(tab)
                         }
                     )
                 }
@@ -215,9 +211,9 @@ struct ContentView: View {
                 Group {
                     switch selectedPage {
                     case .gameAnalysis:
-                        if openGamesManager.activeGame != nil {
+                        if let activeTab = openGamesManager.activeTab {
                             GameAnalysisView()
-                                .environmentObject(gameViewModel)
+                                .environmentObject(activeTab.viewModel)
                         } else {
                             EmptyGameAnalysisView()
                         }
@@ -243,13 +239,7 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("LoadGameInAnalysis"))) { notification in
             if let game = notification.object as? ChessGameEntity {
                 openGamesManager.openGame(game)
-                gameViewModel.loadGame(from: game)
                 selectedPage = .gameAnalysis
-            }
-        }
-        .onChange(of: openGamesManager.activeGameId) { oldValue, newValue in
-            if let activeGame = openGamesManager.activeGame {
-                gameViewModel.loadGame(from: activeGame)
             }
         }
     }
@@ -257,19 +247,19 @@ struct ContentView: View {
 
 // MARK: - Safari-style Tab Bar
 struct SafariTabBar: View {
-    let openGames: [ChessGameEntity]
-    let activeGameId: UUID?
-    let onSelectGame: (ChessGameEntity) -> Void
-    let onCloseGame: (ChessGameEntity) -> Void
+    let openTabs: [GameTab]
+    let activeTabId: UUID?
+    let onSelectTab: (GameTab) -> Void
+    let onCloseTab: (GameTab) -> Void
     
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(openGames, id: \.id) { game in
+            ForEach(openTabs, id: \.id) { tab in
                 SafariTabView(
-                    game: game,
-                    isActive: activeGameId == game.id,
-                    onSelect: { onSelectGame(game) },
-                    onClose: { onCloseGame(game) }
+                    tab: tab,
+                    isActive: activeTabId == tab.id,
+                    onSelect: { onSelectTab(tab) },
+                    onClose: { onCloseTab(tab) }
                 )
             }
             
@@ -291,7 +281,7 @@ struct SafariTabBar: View {
 
 // MARK: - Safari-style Individual Tab
 struct SafariTabView: View {
-    let game: ChessGameEntity
+    let tab: GameTab
     let isActive: Bool
     let onSelect: () -> Void
     let onClose: () -> Void
@@ -301,17 +291,17 @@ struct SafariTabView: View {
             // Tab content
             HStack(spacing: 6) {
                 // Favicon-style icon
-                Image(systemName: game.resultIcon)
-                    .foregroundColor(game.resultColor)
+                Image(systemName: tab.game.resultIcon)
+                    .foregroundColor(tab.game.resultColor)
                     .font(.system(size: 10))
                 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(game.displayTitle)
+                    Text(tab.game.displayTitle)
                         .font(.system(size: 11))
                         .fontWeight(.medium)
                         .lineLimit(1)
                     
-                    Text("\(game.whitePlayer ?? "?") vs \(game.blackPlayer ?? "?")")
+                    Text("\(tab.game.whitePlayer ?? "?") vs \(tab.game.blackPlayer ?? "?")")
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
@@ -320,13 +310,13 @@ struct SafariTabView: View {
             .frame(maxWidth: 200)
             .contentShape(Rectangle())
             .onTapGesture {
-                print("Safari tab clicked: \(game.displayTitle)")
+                print("Safari tab clicked: \(tab.game.displayTitle)")
                 onSelect()
             }
             
             // Close button
             Button(action: {
-                print("Safari tab close: \(game.displayTitle)")
+                print("Safari tab close: \(tab.game.displayTitle)")
                 onClose()
             }) {
                 Image(systemName: "xmark")
