@@ -448,6 +448,14 @@ struct GameAnalysisView: View {
     
     private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
+    // Check if this view's tab is the active one
+    private var isActiveTab: Bool {
+        if let activeTab = openGamesManager.activeTab {
+            return activeTab.viewModel === viewModel
+        }
+        return false
+    }
+    
     // Computed property for move list font size based on board size
     private var moveListFontSize: CGFloat {
         return max(10, openGamesManager.globalBoardSize / 35) // Scale font with board, minimum 10pt
@@ -523,53 +531,13 @@ struct GameAnalysisView: View {
                                     }
                             )
                     }
-                    .focused($isFocused)
-                    .onKeyPress { keyPress in
-                        print("Key pressed: \(keyPress.key)")
-                        switch keyPress.key {
-                        case .leftArrow:
-                            if viewModel.currentMoveIndex > 0 {
-                                viewModel.previousPosition()
-                                return .handled
-                            }
-                        case .rightArrow:
-                            if viewModel.currentMoveIndex < viewModel.totalPositions - 1 {
-                                viewModel.nextPosition()
-                                return .handled
-                            }
-                        default:
-                            break
-                        }
-                        return .ignored
-                    }
                     
                     // Moves list panel
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Moves")
-                            .font(.headline)
-                            .padding(.bottom, 4)
-                        
                         ScrollViewReader { proxy in
                             ScrollView {
                                 LazyVStack(alignment: .leading, spacing: 4) {
-                                    // Starting position
-                                    HStack {
-                                        Button("Start") {
-                                            viewModel.currentMoveIndex = 0
-                                            viewModel.game.board = viewModel.boardHistory.first ?? viewModel.game.board
-                                        }
-                                        .buttonStyle(.plain)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(viewModel.currentMoveIndex == 0 ? Color.blue.opacity(0.3) : Color.clear)
-                                        .cornerRadius(4)
-                                        .font(.system(size: moveListFontSize, design: .monospaced))
-                                        
-                                        Spacer()
-                                    }
-                                    .id("move-0")
-                                    
-                                    // Move pairs
+                                    // Move pairs (removed "Start" button)
                                     ForEach(0..<((pgn.moves.count + 1) / 2), id: \.self) { pairIndex in
                                         HStack(spacing: 8) {
                                             // Move number
@@ -634,17 +602,6 @@ struct GameAnalysisView: View {
                         .frame(maxHeight: openGamesManager.globalBoardSize)
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(8)
-                        
-                        // Move counter and result
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Move \(viewModel.currentMoveIndex) of \(viewModel.totalPositions - 1)")
-                                .font(.system(size: moveListFontSize))
-                                .foregroundColor(.secondary)
-                            
-                            Text("Result: \(pgn.result ?? "*")")
-                                .font(.system(size: moveListFontSize))
-                                .fontWeight(.medium)
-                        }
                     }
                     .frame(width: moveListWidth)
                 }
@@ -666,7 +623,6 @@ struct GameAnalysisView: View {
                         viewModel.previousPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == 0)
-                    .keyboardShortcut(.leftArrow, modifiers: [])
                     
                     Button("Save Game") {
                         if let pgn = viewModel.pgnGame {
@@ -679,7 +635,6 @@ struct GameAnalysisView: View {
                         viewModel.nextPosition()
                     }
                     .disabled(viewModel.currentMoveIndex == viewModel.totalPositions - 1)
-                    .keyboardShortcut(.rightArrow, modifiers: [])
                     
                     Button("▶▶") {
                         viewModel.currentMoveIndex = viewModel.totalPositions - 1
@@ -697,13 +652,59 @@ struct GameAnalysisView: View {
                 Spacer()
             }
         }
+        .focusable()
+        .focusEffectDisabled() // This removes the focus border/ring
+        .focused($isFocused)
+        .onKeyPress { keyPress in
+            // Only handle key presses if this is the active tab
+            guard isActiveTab else { return .ignored }
+            
+            print("Key pressed in tab: \(viewModel.gameTitle), key: \(keyPress.key)")
+            switch keyPress.key {
+            case .leftArrow:
+                if viewModel.currentMoveIndex > 0 {
+                    viewModel.previousPosition()
+                    return .handled
+                }
+            case .rightArrow:
+                if viewModel.currentMoveIndex < viewModel.totalPositions - 1 {
+                    viewModel.nextPosition()
+                    return .handled
+                }
+            case .upArrow:
+                // Go to beginning of game
+                viewModel.currentMoveIndex = 0
+                if let firstBoard = viewModel.boardHistory.first {
+                    viewModel.game.board = firstBoard
+                }
+                return .handled
+            case .downArrow:
+                // Go to end of game
+                viewModel.currentMoveIndex = viewModel.totalPositions - 1
+                if let lastBoard = viewModel.boardHistory.last {
+                    viewModel.game.board = lastBoard
+                }
+                return .handled
+            default:
+                break
+            }
+            return .ignored
+        }
         .onAppear {
-            // Auto-focus when the view appears
-            isFocused = true
+            // Only auto-focus if this is the active tab
+            if isActiveTab {
+                isFocused = true
+            }
         }
         .onTapGesture {
-            // Re-focus when user clicks anywhere in the view
-            isFocused = true
+            // Only re-focus if this is the active tab
+            if isActiveTab {
+                isFocused = true
+            }
+        }
+        .onChange(of: openGamesManager.activeTabId) { oldValue, newValue in
+            // Update focus when active tab changes
+            isFocused = isActiveTab
         }
     }
 }
