@@ -18,6 +18,7 @@ struct GameTab: Identifiable {
 class OpenGamesManager: ObservableObject {
     @Published var openTabs: [GameTab] = []
     @Published var activeTabId: UUID? = nil
+    @Published var globalBoardSize: CGFloat = 350
     
     static let shared = OpenGamesManager()
     
@@ -214,6 +215,7 @@ struct ContentView: View {
                         if let activeTab = openGamesManager.activeTab {
                             GameAnalysisView()
                                 .environmentObject(activeTab.viewModel)
+                                .environmentObject(openGamesManager)
                         } else {
                             EmptyGameAnalysisView()
                         }
@@ -440,7 +442,7 @@ struct EmptyGameAnalysisView: View {
 // MARK: - Game Analysis View
 struct GameAnalysisView: View {
     @EnvironmentObject var viewModel: GameViewModel
-    @State private var boardSize: CGFloat = 350
+    @EnvironmentObject var openGamesManager: OpenGamesManager
     @State private var lastDragValue: DragGesture.Value?
     @FocusState private var isFocused: Bool
     
@@ -448,12 +450,12 @@ struct GameAnalysisView: View {
     
     // Computed property for move list font size based on board size
     private var moveListFontSize: CGFloat {
-        return max(10, boardSize / 35) // Scale font with board, minimum 10pt
+        return max(10, openGamesManager.globalBoardSize / 35) // Scale font with board, minimum 10pt
     }
     
     // Computed property for move list width based on board size
     private var moveListWidth: CGFloat {
-        return max(200, boardSize * 0.6) // Scale width with board, minimum 200pt
+        return max(200, openGamesManager.globalBoardSize * 0.6) // Scale width with board, minimum 200pt
     }
     
     var body: some View {
@@ -497,7 +499,7 @@ struct GameAnalysisView: View {
                             }
                         }
                         .border(Color.black, width: 1)
-                        .frame(width: boardSize, height: boardSize, alignment: .center)
+                        .frame(width: openGamesManager.globalBoardSize, height: openGamesManager.globalBoardSize, alignment: .center)
                         
                         // Resize handle
                         Image(systemName: "arrow.up.left.and.arrow.down.right.circle.fill")
@@ -509,10 +511,10 @@ struct GameAnalysisView: View {
                                 DragGesture()
                                     .onChanged { value in
                                         let dragAmount = (value.translation.width - (lastDragValue?.translation.width ?? 0)) + (value.translation.height - (lastDragValue?.translation.height ?? 0))
-                                        boardSize += dragAmount / 2
+                                        openGamesManager.globalBoardSize += dragAmount / 2
                                         
-                                        if boardSize < 200 { boardSize = 200 }
-                                        if boardSize > 600 { boardSize = 600 }
+                                        if openGamesManager.globalBoardSize < 200 { openGamesManager.globalBoardSize = 200 }
+                                        if openGamesManager.globalBoardSize > 600 { openGamesManager.globalBoardSize = 600 }
                                         
                                         lastDragValue = value
                                     }
@@ -629,7 +631,7 @@ struct GameAnalysisView: View {
                                 }
                             }
                         }
-                        .frame(maxHeight: boardSize)
+                        .frame(maxHeight: openGamesManager.globalBoardSize)
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(8)
                         
