@@ -1,4 +1,4 @@
-// ContentView.swift - Enhanced with per-tab state management
+// ContentView.swift - Enhanced with move highlighting
 import SwiftUI
 
 // MARK: - Game Tab Data
@@ -61,15 +61,17 @@ class OpenGamesManager: ObservableObject {
     }
 }
 
-// MARK: - Enhanced Game View Model
+// MARK: - Enhanced Game View Model with Move Highlighting
 class GameViewModel: ObservableObject {
     @Published var game: Game = Game()
     @Published var currentMoveIndex: Int = 0
     @Published var pgnGame: PGN? = nil
     @Published var errorMessage: String? = nil
     @Published var gameTitle: String = "No Game"
+    @Published var highlightManager = MoveHighlightManager()
     
     var boardHistory: [Board] = []
+    private var moveHistory: [Move] = [] // Track the actual moves made
     
     init() {
         // Don't load default game anymore - let tabs manage their own content
@@ -93,11 +95,13 @@ class GameViewModel: ObservableObject {
             }
             
             self.boardHistory = [self.game.board]
+            self.moveHistory = [] // Reset move history
             
             var tempGame = self.game
             for sanMoveString in parsedPgn.moves {
                 do {
                     let move = try MoveParser.parse(san: sanMoveString, currentBoard: tempGame.board, activeColor: tempGame.activeColor)
+                    self.moveHistory.append(move) // Store the actual move
                     tempGame.makeMove(move)
                     self.boardHistory.append(tempGame.board)
                 } catch {
@@ -110,6 +114,9 @@ class GameViewModel: ObservableObject {
             if let firstBoard = boardHistory.first {
                 self.game.board = firstBoard
             }
+            
+            // Clear highlights when loading new game
+            highlightManager.clearHighlights()
             
         } catch {
             self.errorMessage = "Error parsing PGN: \(error.localizedDescription)"
@@ -124,6 +131,7 @@ class GameViewModel: ObservableObject {
         if currentMoveIndex < boardHistory.count - 1 {
             currentMoveIndex += 1
             game.board = boardHistory[currentMoveIndex]
+            updateHighlighting()
         }
     }
     
@@ -131,7 +139,33 @@ class GameViewModel: ObservableObject {
         if currentMoveIndex > 0 {
             currentMoveIndex -= 1
             game.board = boardHistory[currentMoveIndex]
+            updateHighlighting()
         }
+    }
+    
+    func navigateToMove(_ moveIndex: Int) {
+        guard moveIndex >= 0 && moveIndex < boardHistory.count else { return }
+        currentMoveIndex = moveIndex
+        game.board = boardHistory[moveIndex]
+        updateHighlighting()
+    }
+    
+    private func updateHighlighting() {
+        // Clear highlights if we're at the starting position
+        guard currentMoveIndex > 0 else {
+            highlightManager.clearHighlights()
+            return
+        }
+        
+        // Get the move that led to the current position
+        let moveHistoryIndex = currentMoveIndex - 1
+        guard moveHistoryIndex < moveHistory.count else {
+            highlightManager.clearHighlights()
+            return
+        }
+        
+        let lastMove = moveHistory[moveHistoryIndex]
+        highlightManager.highlightMove(lastMove)
     }
 }
 
@@ -439,7 +473,7 @@ struct EmptyGameAnalysisView: View {
     }
 }
 
-// MARK: - Game Analysis View
+// MARK: - Game Analysis View with Move Highlighting
 struct GameAnalysisView: View {
     @EnvironmentObject var viewModel: GameViewModel
     @EnvironmentObject var openGamesManager: OpenGamesManager
@@ -494,7 +528,7 @@ struct GameAnalysisView: View {
             // Main content area with board and moves
             if let pgn = viewModel.pgnGame {
                 HStack(spacing: 20) {
-                    // Chess board
+                    // Chess board with highlighting
                     ZStack(alignment: .bottomTrailing) {
                         LazyVGrid(columns: columns, spacing: 0) {
                             ForEach((0..<8).reversed(), id: \.self) { rankIndex in
@@ -502,7 +536,13 @@ struct GameAnalysisView: View {
                                     let square = Square(file: File(rawValue: fileIndex)!, rank: Rank(rawValue: rankIndex)!)
                                     let piece = viewModel.game.board.piece(at: square)
                                     
-                                    SquareView(square: square, piece: piece)
+                                    // Use EnhancedSquareView with highlighting
+                                    EnhancedSquareView(
+                                        square: square,
+                                        piece: piece,
+                                        isHighlighted: viewModel.highlightManager.isHighlighted(square),
+                                        isLastMoveSquare: viewModel.highlightManager.isLastMoveSquare(square)
+                                    )
                                 }
                             }
                         }
@@ -537,7 +577,7 @@ struct GameAnalysisView: View {
                         ScrollViewReader { proxy in
                             ScrollView {
                                 LazyVStack(alignment: .leading, spacing: 4) {
-                                    // Move pairs (removed "Start" button)
+                                    // Move pairs
                                     ForEach(0..<((pgn.moves.count + 1) / 2), id: \.self) { pairIndex in
                                         HStack(spacing: 8) {
                                             // Move number
@@ -552,10 +592,7 @@ struct GameAnalysisView: View {
                                                 let whiteMoveIndex = pairIndex * 2 + 1
                                                 
                                                 Button(whiteMove) {
-                                                    viewModel.currentMoveIndex = whiteMoveIndex
-                                                    if whiteMoveIndex < viewModel.boardHistory.count {
-                                                        viewModel.game.board = viewModel.boardHistory[whiteMoveIndex]
-                                                    }
+                                                    viewModel.navigateToMove(whiteMoveIndex)
                                                 }
                                                 .buttonStyle(.plain)
                                                 .padding(.horizontal, 6)
@@ -572,10 +609,7 @@ struct GameAnalysisView: View {
                                                 let blackMoveIndex = pairIndex * 2 + 2
                                                 
                                                 Button(blackMove) {
-                                                    viewModel.currentMoveIndex = blackMoveIndex
-                                                    if blackMoveIndex < viewModel.boardHistory.count {
-                                                        viewModel.game.board = viewModel.boardHistory[blackMoveIndex]
-                                                    }
+                                                    viewModel.navigateToMove(blackMoveIndex)
                                                 }
                                                 .buttonStyle(.plain)
                                                 .padding(.horizontal, 6)
@@ -612,10 +646,7 @@ struct GameAnalysisView: View {
                 // Control buttons
                 HStack {
                     Button("◀◀") {
-                        viewModel.currentMoveIndex = 0
-                        if let firstBoard = viewModel.boardHistory.first {
-                            viewModel.game.board = firstBoard
-                        }
+                        viewModel.navigateToMove(0)
                     }
                     .disabled(viewModel.currentMoveIndex == 0)
                     
@@ -637,10 +668,7 @@ struct GameAnalysisView: View {
                     .disabled(viewModel.currentMoveIndex == viewModel.totalPositions - 1)
                     
                     Button("▶▶") {
-                        viewModel.currentMoveIndex = viewModel.totalPositions - 1
-                        if let lastBoard = viewModel.boardHistory.last {
-                            viewModel.game.board = lastBoard
-                        }
+                        viewModel.navigateToMove(viewModel.totalPositions - 1)
                     }
                     .disabled(viewModel.currentMoveIndex == viewModel.totalPositions - 1)
                 }
@@ -653,7 +681,7 @@ struct GameAnalysisView: View {
             }
         }
         .focusable()
-        .focusEffectDisabled() // This removes the focus border/ring
+        .focusEffectDisabled()
         .focused($isFocused)
         .onKeyPress { keyPress in
             // Only handle key presses if this is the active tab
@@ -673,17 +701,11 @@ struct GameAnalysisView: View {
                 }
             case .upArrow:
                 // Go to beginning of game
-                viewModel.currentMoveIndex = 0
-                if let firstBoard = viewModel.boardHistory.first {
-                    viewModel.game.board = firstBoard
-                }
+                viewModel.navigateToMove(0)
                 return .handled
             case .downArrow:
                 // Go to end of game
-                viewModel.currentMoveIndex = viewModel.totalPositions - 1
-                if let lastBoard = viewModel.boardHistory.last {
-                    viewModel.game.board = lastBoard
-                }
+                viewModel.navigateToMove(viewModel.totalPositions - 1)
                 return .handled
             default:
                 break
