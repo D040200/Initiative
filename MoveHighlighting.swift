@@ -75,7 +75,6 @@ struct EnhancedSquareView: View {
                     .resizable()
                     .scaledToFit()
                     .scaleEffect(isHighlighted ? 1.05 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: isHighlighted)
             }
             
             // Add glow effect for highlighted square
@@ -86,8 +85,6 @@ struct EnhancedSquareView: View {
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .animation(.easeInOut(duration: 0.2), value: isHighlighted)
-        .animation(.easeInOut(duration: 0.2), value: isLastMoveSquare)
     }
 }
 
