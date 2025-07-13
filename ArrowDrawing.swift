@@ -94,18 +94,20 @@ class ArrowManager: ObservableObject {
             // Save circles to current move index
             circlesByMoveIndex[currentMoveIndex] = currentCircles
         } else {
-            // Different squares - create arrow
-            // Remove existing arrow with same from/to
-            currentArrows.removeAll { $0.from == startSquare && $0.to == square }
+            // Different squares - create/toggle arrow
+            if let existingIndex = currentArrows.firstIndex(where: { $0.from == startSquare && $0.to == square }) {
+                // Remove existing arrow
+                currentArrows.remove(at: existingIndex)
+                print("🗑️ Removed arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
+            } else {
+                // Add new arrow
+                let newArrow = ChessArrow(from: startSquare, to: square, color: .blue)
+                currentArrows.append(newArrow)
+                print("➕ Added arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
+            }
             
-            // Add new arrow
-            let newArrow = ChessArrow(from: startSquare, to: square, color: .blue)
-            currentArrows.append(newArrow)
-            
-            // Save to current move index
+            // Save arrows to current move index
             arrowsByMoveIndex[currentMoveIndex] = currentArrows
-            
-            print("➕ Added arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
         }
         
         // Reset state
