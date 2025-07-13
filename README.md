@@ -54,9 +54,9 @@ A comprehensive chess analysis and study application built for macOS using Swift
 
 ### Interactive Analysis Features
 - [ ] **Arrow Drawing System**: Visual annotation tools for position analysis
-  - [ ] Click and drag to draw arrows on the board
+  - [x] Click and drag to draw arrows on the board
   - [ ] Different arrow colors for various types of analysis
-  - [ ] Square highlighting and marking system
+  - [x] Square highlighting and marking system
   - [ ] Save annotations with game positions
 
 - [ ] **Move Addition and Analysis**: Extend games with analysis and variations
