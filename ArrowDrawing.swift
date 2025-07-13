@@ -2,7 +2,16 @@
 
 import SwiftUI
 
-// MARK: - Arrow Data Structure
+// MARK: - Circle Highlight Data Structure
+struct ChessCircle: Identifiable, Equatable {
+    let id = UUID()
+    let square: Square
+    let color: Color
+    
+    static func == (lhs: ChessCircle, rhs: ChessCircle) -> Bool {
+        return lhs.square == rhs.square
+    }
+}
 struct ChessArrow: Identifiable, Equatable {
     let id = UUID()
     let from: Square
@@ -17,12 +26,14 @@ struct ChessArrow: Identifiable, Equatable {
 // MARK: - Arrow Manager
 class ArrowManager: ObservableObject {
     @Published var currentArrows: [ChessArrow] = []
+    @Published var currentCircles: [ChessCircle] = []
     @Published var previewArrow: PreviewArrow? = nil
     @Published var isDrawing = false
     @Published private(set) var startSquare: Square? = nil
     
-    // Store arrows per move index
+    // Store arrows and circles per move index
     private var arrowsByMoveIndex: [Int: [ChessArrow]] = [:]
+    private var circlesByMoveIndex: [Int: [ChessCircle]] = [:]
     private var currentMoveIndex: Int = 0
     
     struct PreviewArrow {
@@ -32,21 +43,25 @@ class ArrowManager: ObservableObject {
     }
     
     func setCurrentMove(_ moveIndex: Int) {
-        // Save current arrows to the previous move index
+        // Save current arrows and circles to the previous move index
         if !currentArrows.isEmpty {
             arrowsByMoveIndex[currentMoveIndex] = currentArrows
+        }
+        if !currentCircles.isEmpty {
+            circlesByMoveIndex[currentMoveIndex] = currentCircles
         }
         
         // Update to new move index
         currentMoveIndex = moveIndex
         
-        // Load arrows for the new move index
+        // Load arrows and circles for the new move index
         currentArrows = arrowsByMoveIndex[moveIndex] ?? []
+        currentCircles = circlesByMoveIndex[moveIndex] ?? []
         
         // Cancel any drawing in progress
         cancelDrawing()
         
-        print("🔄 Switched to move \(moveIndex), loaded \(currentArrows.count) arrows")
+        print("🔄 Switched to move \(moveIndex), loaded \(currentArrows.count) arrows, \(currentCircles.count) circles")
     }
     
     func startDrawing(from square: Square) {
@@ -63,8 +78,23 @@ class ArrowManager: ObservableObject {
     func finishDrawing(to square: Square) {
         guard let startSquare = startSquare else { return }
         
-        // Don't create arrow to same square
-        if startSquare != square {
+        if startSquare == square {
+            // Same square - create/toggle circle
+            if let existingIndex = currentCircles.firstIndex(where: { $0.square == square }) {
+                // Remove existing circle
+                currentCircles.remove(at: existingIndex)
+                print("🔴 Removed circle from \(square) for move \(currentMoveIndex)")
+            } else {
+                // Add new circle
+                let newCircle = ChessCircle(square: square, color: .red)
+                currentCircles.append(newCircle)
+                print("🟡 Added circle to \(square) for move \(currentMoveIndex)")
+            }
+            
+            // Save circles to current move index
+            circlesByMoveIndex[currentMoveIndex] = currentCircles
+        } else {
+            // Different squares - create arrow
             // Remove existing arrow with same from/to
             currentArrows.removeAll { $0.from == startSquare && $0.to == square }
             
@@ -92,30 +122,63 @@ class ArrowManager: ObservableObject {
     
     func clearAllArrows() {
         currentArrows.removeAll()
+        currentCircles.removeAll()
         arrowsByMoveIndex[currentMoveIndex] = []
+        circlesByMoveIndex[currentMoveIndex] = []
         cancelDrawing()
-        print("🗑️ Cleared arrows for move \(currentMoveIndex)")
+        print("🗑️ Cleared arrows and circles for move \(currentMoveIndex)")
     }
     
     func clearAllArrowsForAllMoves() {
         currentArrows.removeAll()
+        currentCircles.removeAll()
         arrowsByMoveIndex.removeAll()
+        circlesByMoveIndex.removeAll()
         cancelDrawing()
-        print("🗑️ Cleared ALL arrows for ALL moves")
+        print("🗑️ Cleared ALL arrows and circles for ALL moves")
     }
     
     // Debug function to see what's stored
     func debugArrowStorage() {
-        print("📊 Arrow storage debug:")
+        print("📊 Arrow & Circle storage debug:")
         print("   Current move: \(currentMoveIndex)")
         print("   Current arrows: \(currentArrows.count)")
+        print("   Current circles: \(currentCircles.count)")
         for (moveIndex, arrows) in arrowsByMoveIndex.sorted(by: { $0.key < $1.key }) {
-            print("   Move \(moveIndex): \(arrows.count) arrows")
+            let circles = circlesByMoveIndex[moveIndex]?.count ?? 0
+            print("   Move \(moveIndex): \(arrows.count) arrows, \(circles) circles")
         }
     }
 }
 
-// MARK: - Arrow Shape
+// MARK: - Circle Shape
+struct CircleShape: Shape {
+    let square: Square
+    let boardSize: CGFloat
+    
+    func path(in rect: CGRect) -> Path {
+        let squareSize = boardSize / 8
+        
+        // Calculate center point of square
+        let centerPoint = CGPoint(
+            x: CGFloat(square.file.rawValue) * squareSize + squareSize / 2,
+            y: CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
+        )
+        
+        // Circle radius (smaller than square to leave some margin)
+        let radius = squareSize * 0.35
+        
+        var path = Path()
+        path.addEllipse(in: CGRect(
+            x: centerPoint.x - radius,
+            y: centerPoint.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        ))
+        
+        return path
+    }
+}
 struct ArrowShape: Shape {
     let from: Square
     let to: Square
@@ -207,6 +270,7 @@ struct ArrowShape: Shape {
 // MARK: - Arrow Drawing View
 struct ArrowDrawingView: View {
     let currentArrows: [ChessArrow]
+    let currentCircles: [ChessCircle]
     let previewArrow: ArrowManager.PreviewArrow?
     let boardSize: CGFloat
     
@@ -216,6 +280,13 @@ struct ArrowDrawingView: View {
             ForEach(currentArrows) { arrow in
                 ArrowShape(from: arrow.from, to: arrow.to, boardSize: boardSize)
                     .stroke(arrow.color, lineWidth: max(3, boardSize / 120))
+                    .shadow(color: .black.opacity(0.3), radius: 1, x: 1, y: 1)
+            }
+            
+            // Circle highlights for current move
+            ForEach(currentCircles) { circle in
+                CircleShape(square: circle.square, boardSize: boardSize)
+                    .stroke(circle.color, lineWidth: max(4, boardSize / 100))
                     .shadow(color: .black.opacity(0.3), radius: 1, x: 1, y: 1)
             }
             
@@ -333,6 +404,7 @@ struct LichessChessBoard: View {
             // Arrow overlay (middle layer)
             ArrowDrawingView(
                 currentArrows: arrowManager.currentArrows,
+                currentCircles: arrowManager.currentCircles,
                 previewArrow: arrowManager.previewArrow,
                 boardSize: boardSize
             )
