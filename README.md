@@ -1,4 +1,4 @@
-# Chess App
+# Initiative
 
 <p align="center">
   <img src="app_icon.png" alt="Chess App Icon" width="128" height="128">
