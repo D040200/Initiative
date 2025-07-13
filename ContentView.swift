@@ -132,22 +132,40 @@ class GameViewModel: ObservableObject {
             currentMoveIndex += 1
             game.board = boardHistory[currentMoveIndex]
             updateHighlighting()
+            
+            // Notify arrow manager of move change
+            NotificationCenter.default.post(
+                name: NSNotification.Name("MoveIndexChanged"),
+                object: currentMoveIndex
+            )
         }
     }
-    
+
     func previousPosition() {
         if currentMoveIndex > 0 {
             currentMoveIndex -= 1
             game.board = boardHistory[currentMoveIndex]
             updateHighlighting()
+            
+            // Notify arrow manager of move change
+            NotificationCenter.default.post(
+                name: NSNotification.Name("MoveIndexChanged"),
+                object: currentMoveIndex
+            )
         }
     }
-    
+
     func navigateToMove(_ moveIndex: Int) {
         guard moveIndex >= 0 && moveIndex < boardHistory.count else { return }
         currentMoveIndex = moveIndex
         game.board = boardHistory[moveIndex]
         updateHighlighting()
+        
+        // Notify arrow manager of move change
+        NotificationCenter.default.post(
+            name: NSNotification.Name("MoveIndexChanged"),
+            object: currentMoveIndex
+        )
     }
     
     private func updateHighlighting() {
@@ -167,6 +185,7 @@ class GameViewModel: ObservableObject {
         let lastMove = moveHistory[moveHistoryIndex]
         highlightManager.highlightMove(lastMove)
     }
+    
 }
 
 // MARK: - Sidebar Pages Enum
@@ -480,7 +499,6 @@ struct GameAnalysisView: View {
     @State private var lastDragValue: DragGesture.Value?
     @FocusState private var isFocused: Bool
     
-    private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
     // Check if this view's tab is the active one
     private var isActiveTab: Bool {
@@ -529,25 +547,14 @@ struct GameAnalysisView: View {
             if let pgn = viewModel.pgnGame {
                 HStack(spacing: 20) {
                     // Chess board with highlighting
+                    // Chess board with arrow support
+                    // Chess board with Lichess-style arrows
                     ZStack(alignment: .bottomTrailing) {
-                        LazyVGrid(columns: columns, spacing: 0) {
-                            ForEach((0..<8).reversed(), id: \.self) { rankIndex in
-                                ForEach(0..<8, id: \.self) { fileIndex in
-                                    let square = Square(file: File(rawValue: fileIndex)!, rank: Rank(rawValue: rankIndex)!)
-                                    let piece = viewModel.game.board.piece(at: square)
-                                    
-                                    // Use EnhancedSquareView with highlighting
-                                    EnhancedSquareView(
-                                        square: square,
-                                        piece: piece,
-                                        isHighlighted: viewModel.highlightManager.isHighlighted(square),
-                                        isLastMoveSquare: viewModel.highlightManager.isLastMoveSquare(square)
-                                    )
-                                }
-                            }
-                        }
-                        .border(Color.black, width: 1)
-                        .frame(width: openGamesManager.globalBoardSize, height: openGamesManager.globalBoardSize, alignment: .center)
+                        LichessChessBoard(
+                            board: viewModel.game.board,
+                            highlightManager: viewModel.highlightManager,
+                            boardSize: $openGamesManager.globalBoardSize
+                        )
                         
                         // Resize handle
                         Image(systemName: "arrow.up.left.and.arrow.down.right.circle.fill")

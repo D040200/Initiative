@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3D65B1722E2151360097BAAB /* MoveHighlighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D65B1712E2151310097BAAB /* MoveHighlighting.swift */; };
+		3D65B1742E242C700097BAAB /* ArrowDrawing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D65B1732E242C690097BAAB /* ArrowDrawing.swift */; };
 		3D92C7AA2E1E79E1005267E7 /* ChessLocalDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D92C7A92E1E79DE005267E7 /* ChessLocalDataManager.swift */; };
 		3D92C7AC2E1E79F4005267E7 /* LocalDatabaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D92C7AB2E1E79F0005267E7 /* LocalDatabaseView.swift */; };
 		3D92C7CF2E1E8046005267E7 /* ChessDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3D92C7CD2E1E8046005267E7 /* ChessDataModel.xcdatamodeld */; };
@@ -38,6 +39,7 @@
 
 /* Begin PBXFileReference section */
 		3D65B1712E2151310097BAAB /* MoveHighlighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveHighlighting.swift; sourceTree = "<group>"; };
+		3D65B1732E242C690097BAAB /* ArrowDrawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrowDrawing.swift; sourceTree = "<group>"; };
 		3D92C7A02E1E78AD005267E7 /* Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D92C7A92E1E79DE005267E7 /* ChessLocalDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessLocalDataManager.swift; sourceTree = "<group>"; };
 		3D92C7AB2E1E79F0005267E7 /* LocalDatabaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabaseView.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				3DE973002E1BD2A400DC0CD6 /* ChessApp.swift */,
 				3DE972F62E1AE36300DC0CD6 /* ContentView.swift */,
 				3D65B1712E2151310097BAAB /* MoveHighlighting.swift */,
+				3D65B1732E242C690097BAAB /* ArrowDrawing.swift */,
 				3D92C7A92E1E79DE005267E7 /* ChessLocalDataManager.swift */,
 				3D92C7AB2E1E79F0005267E7 /* LocalDatabaseView.swift */,
 				3DE972F82E1AE37100DC0CD6 /* Game.swift */,
@@ -228,6 +231,7 @@
 				3DE973012E1BD2A700DC0CD6 /* ChessApp.swift in Sources */,
 				3DE972F12E1AE2FB00DC0CD6 /* Board.swift in Sources */,
 				3D92C7AA2E1E79E1005267E7 /* ChessLocalDataManager.swift in Sources */,
+				3D65B1742E242C700097BAAB /* ArrowDrawing.swift in Sources */,
 				3DE973032E1CFB1B00DC0CD6 /* SquareView.swift in Sources */,
 				3DE972F72E1AE36500DC0CD6 /* ContentView.swift in Sources */,
 				3DE972FB2E1AE37F00DC0CD6 /* Move.swift in Sources */,
