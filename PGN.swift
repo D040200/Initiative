@@ -7,12 +7,14 @@ struct PGN {
     var initialFen: String
     var moves: [String]
     var result: String?
+    var variations: [GameVariation] = [] // Add this line
     
-    init(tags: [String: String], initialFen: String, moves: [String], result: String?) {
+    init(tags: [String: String], initialFen: String, moves: [String], result: String?, variations: [GameVariation] = []) {
         self.tags = tags
         self.initialFen = initialFen
         self.moves = moves
         self.result = result
+        self.variations = variations
     }
 }
 

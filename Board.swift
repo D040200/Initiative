@@ -185,8 +185,6 @@ struct Piece: Equatable {
         }
         self.color = isWhite ? .white : .black
     }
-    
-
 }
 
 // MARK: - Board Object
@@ -238,9 +236,8 @@ struct Board {
             blackBishops: 0b00100100_00000000_00000000_00000000_00000000_00000000_00000000_00000000,
             blackRooks:   0b10000001_00000000_00000000_00000000_00000000_00000000_00000000_00000000,
             blackQueens:  0b00001000_00000000_00000000_00000000_00000000_00000000_00000000_00000000,
-            blackKing:    0b00010000_00000000_00000000_00000000_00000000_00000000_00000000_00010000
+            blackKing:    0b00010000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
-        
     }
     
     init?(fen: String) {
@@ -411,6 +408,7 @@ struct Board {
     }
 }
 
+// MARK: - Path Checking Extension
 extension Board {
     func isPathClear(from start: Square, to end: Square, ignoring: Piece? = nil) -> Bool {
         let fileDiff = end.file.rawValue - start.file.rawValue
@@ -448,3 +446,196 @@ extension Board {
     }
 }
 
+// MARK: - Move Generation Extension
+extension Board {
+    func generateLegalMoves(for color: PieceColor) -> [Move] {
+        var legalMoves: [Move] = []
+        
+        print("🔍 BOARD: Starting move generation for \(color)")
+        
+        for square in Square.all {
+            if let piece = self.piece(at: square), piece.color == color {
+                print("🔍 BOARD: Found \(piece.type) at \(square)")
+                let moves = generateMovesForPiece(piece, at: square)
+                print("🔍 BOARD: Generated \(moves.count) moves for \(piece.type) at \(square)")
+                legalMoves.append(contentsOf: moves)
+            }
+        }
+        
+        print("🔍 BOARD: Total moves generated: \(legalMoves.count)")
+        return legalMoves
+    }
+    
+    private func generateMovesForPiece(_ piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        
+        switch piece.type {
+        case .pawn:
+            moves.append(contentsOf: generatePawnMoves(for: piece, at: square))
+        case .knight:
+            moves.append(contentsOf: generateKnightMoves(for: piece, at: square))
+        case .bishop:
+            moves.append(contentsOf: generateBishopMoves(for: piece, at: square))
+        case .rook:
+            moves.append(contentsOf: generateRookMoves(for: piece, at: square))
+        case .queen:
+            moves.append(contentsOf: generateQueenMoves(for: piece, at: square))
+        case .king:
+            moves.append(contentsOf: generateKingMoves(for: piece, at: square))
+        }
+        
+        return moves
+    }
+    
+    private func generatePawnMoves(for piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let direction = piece.color == .white ? 1 : -1
+        
+        print("🔍 PAWN: Generating moves for \(piece.color) pawn at \(square), direction=\(direction)")
+        
+        // Forward moves
+        if let oneSquareUp = Rank(rawValue: square.rank.rawValue + direction) {
+            let targetSquare = Square(file: square.file, rank: oneSquareUp)
+            print("🔍 PAWN: Checking one square forward to \(targetSquare)")
+            
+            if self.piece(at: targetSquare) == nil {
+                moves.append(Move(from: square, to: targetSquare, piece: piece))
+                print("🔍 PAWN: Added forward move to \(targetSquare)")
+                
+                // Double move from starting position
+                let startingRank = piece.color == .white ? Rank.two : Rank.seven
+                if square.rank == startingRank,
+                   let twoSquaresUp = Rank(rawValue: square.rank.rawValue + 2 * direction) {
+                    let doubleTargetSquare = Square(file: square.file, rank: twoSquaresUp)
+                    print("🔍 PAWN: Checking double move to \(doubleTargetSquare)")
+                    
+                    if self.piece(at: doubleTargetSquare) == nil {
+                        moves.append(Move(from: square, to: doubleTargetSquare, piece: piece, flag: .doublePawnPush))
+                        print("🔍 PAWN: Added double move to \(doubleTargetSquare)")
+                    }
+                }
+            } else {
+                print("🔍 PAWN: Forward square \(targetSquare) is occupied")
+            }
+        }
+        
+        // Captures
+        for fileOffset in [-1, 1] {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + direction) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                print("🔍 PAWN: Checking capture to \(targetSquare)")
+                
+                if let targetPiece = self.piece(at: targetSquare), targetPiece.color != piece.color {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    print("🔍 PAWN: Added capture move to \(targetSquare)")
+                }
+            }
+        }
+        
+        print("🔍 PAWN: Generated \(moves.count) moves total")
+        return moves
+    }
+    
+    private func generateKnightMoves(for piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let knightMoves = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+        
+        for (fileOffset, rankOffset) in knightMoves {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                if let targetPiece = self.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece))
+                }
+            }
+        }
+        
+        return moves
+    }
+    
+    private func generateBishopMoves(for piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(for: piece, at: square, directions: [(-1, -1), (-1, 1), (1, -1), (1, 1)])
+    }
+    
+    private func generateRookMoves(for piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(for: piece, at: square, directions: [(-1, 0), (1, 0), (0, -1), (0, 1)])
+    }
+    
+    private func generateQueenMoves(for piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(for: piece, at: square, directions: [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
+    }
+    
+    private func generateKingMoves(for piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let kingMoves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        
+        for (fileOffset, rankOffset) in kingMoves {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                if let targetPiece = self.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece))
+                }
+            }
+        }
+        
+        return moves
+    }
+    
+    private func generateSlidingMoves(for piece: Piece, at square: Square, directions: [(Int, Int)]) -> [Move] {
+        var moves: [Move] = []
+        
+        for (fileDirection, rankDirection) in directions {
+            var currentFile = square.file.rawValue + fileDirection
+            var currentRank = square.rank.rawValue + rankDirection
+            
+            while let file = File(rawValue: currentFile), let rank = Rank(rawValue: currentRank) {
+                let targetSquare = Square(file: file, rank: rank)
+                
+                if let targetPiece = self.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                    break // Can't continue past any piece
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece))
+                }
+                
+                currentFile += fileDirection
+                currentRank += rankDirection
+            }
+        }
+        
+        return moves
+    }
+    
+    // MARK: - Move Validation
+    func isMoveLegal(_ move: Move) -> Bool {
+        // Basic validation - piece exists and can move to target
+        guard let piece = self.piece(at: move.from) else { return false }
+        guard piece == move.piece else { return false }
+        
+        // Check if target square is valid
+        if let targetPiece = self.piece(at: move.to) {
+            // Can't capture own piece
+            if targetPiece.color == piece.color { return false }
+        }
+        
+        // For sliding pieces, check if path is clear
+        switch piece.type {
+        case .bishop, .rook, .queen:
+            return isPathClear(from: move.from, to: move.to)
+        default:
+            return true // Other pieces don't need path checking
+        }
+    }
+}

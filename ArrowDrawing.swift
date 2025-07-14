@@ -1,6 +1,6 @@
-// ArrowDrawing.swift - Lichess-style arrow drawing with move-specific storage
-
+// ArrowDrawing.swift - Fixed version with debugging and proper click detection
 import SwiftUI
+import AppKit
 
 // MARK: - Circle Highlight Data Structure
 struct ChessCircle: Identifiable, Equatable {
@@ -12,6 +12,7 @@ struct ChessCircle: Identifiable, Equatable {
         return lhs.square == rhs.square
     }
 }
+
 struct ChessArrow: Identifiable, Equatable {
     let id = UUID()
     let from: Square
@@ -61,18 +62,20 @@ class ArrowManager: ObservableObject {
         // Cancel any drawing in progress
         cancelDrawing()
         
-        print("🔄 Switched to move \(moveIndex), loaded \(currentArrows.count) arrows, \(currentCircles.count) circles")
+        print("🔄 Arrow Manager: Switched to move \(moveIndex), loaded \(currentArrows.count) arrows, \(currentCircles.count) circles")
     }
     
     func startDrawing(from square: Square) {
         isDrawing = true
         startSquare = square
         previewArrow = nil
+        print("🎯 Arrow Manager: Started drawing from \(square)")
     }
     
     func updatePreview(to square: Square) {
         guard let startSquare = startSquare else { return }
         previewArrow = PreviewArrow(from: startSquare, to: square, color: .blue.opacity(0.7))
+        print("🎯 Arrow Manager: Updated preview to \(square)")
     }
     
     func finishDrawing(to square: Square) {
@@ -81,32 +84,24 @@ class ArrowManager: ObservableObject {
         if startSquare == square {
             // Same square - create/toggle circle
             if let existingIndex = currentCircles.firstIndex(where: { $0.square == square }) {
-                // Remove existing circle
                 currentCircles.remove(at: existingIndex)
-                print("🔴 Removed circle from \(square) for move \(currentMoveIndex)")
+                print("🔴 Arrow Manager: Removed circle from \(square) for move \(currentMoveIndex)")
             } else {
-                // Add new circle
                 let newCircle = ChessCircle(square: square, color: .red)
                 currentCircles.append(newCircle)
-                print("🟡 Added circle to \(square) for move \(currentMoveIndex)")
+                print("🟡 Arrow Manager: Added circle to \(square) for move \(currentMoveIndex)")
             }
-            
-            // Save circles to current move index
             circlesByMoveIndex[currentMoveIndex] = currentCircles
         } else {
             // Different squares - create/toggle arrow
             if let existingIndex = currentArrows.firstIndex(where: { $0.from == startSquare && $0.to == square }) {
-                // Remove existing arrow
                 currentArrows.remove(at: existingIndex)
-                print("🗑️ Removed arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
+                print("🗑️ Arrow Manager: Removed arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
             } else {
-                // Add new arrow
                 let newArrow = ChessArrow(from: startSquare, to: square, color: .blue)
                 currentArrows.append(newArrow)
-                print("➕ Added arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
+                print("➕ Arrow Manager: Added arrow from \(startSquare) to \(square) for move \(currentMoveIndex)")
             }
-            
-            // Save arrows to current move index
             arrowsByMoveIndex[currentMoveIndex] = currentArrows
         }
         
@@ -120,6 +115,7 @@ class ArrowManager: ObservableObject {
         isDrawing = false
         self.startSquare = nil
         previewArrow = nil
+        print("🚫 Arrow Manager: Cancelled drawing")
     }
     
     func clearAllArrows() {
@@ -128,7 +124,7 @@ class ArrowManager: ObservableObject {
         arrowsByMoveIndex[currentMoveIndex] = []
         circlesByMoveIndex[currentMoveIndex] = []
         cancelDrawing()
-        print("🗑️ Cleared arrows and circles for move \(currentMoveIndex)")
+        print("🗑️ Arrow Manager: Cleared arrows and circles for move \(currentMoveIndex)")
     }
     
     func clearAllArrowsForAllMoves() {
@@ -137,19 +133,7 @@ class ArrowManager: ObservableObject {
         arrowsByMoveIndex.removeAll()
         circlesByMoveIndex.removeAll()
         cancelDrawing()
-        print("🗑️ Cleared ALL arrows and circles for ALL moves")
-    }
-    
-    // Debug function to see what's stored
-    func debugArrowStorage() {
-        print("📊 Arrow & Circle storage debug:")
-        print("   Current move: \(currentMoveIndex)")
-        print("   Current arrows: \(currentArrows.count)")
-        print("   Current circles: \(currentCircles.count)")
-        for (moveIndex, arrows) in arrowsByMoveIndex.sorted(by: { $0.key < $1.key }) {
-            let circles = circlesByMoveIndex[moveIndex]?.count ?? 0
-            print("   Move \(moveIndex): \(arrows.count) arrows, \(circles) circles")
-        }
+        print("🗑️ Arrow Manager: Cleared ALL arrows and circles for ALL moves")
     }
 }
 
@@ -161,13 +145,11 @@ struct CircleShape: Shape {
     func path(in rect: CGRect) -> Path {
         let squareSize = boardSize / 8
         
-        // Calculate center point of square
         let centerPoint = CGPoint(
             x: CGFloat(square.file.rawValue) * squareSize + squareSize / 2,
             y: CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
         )
         
-        // Circle radius (smaller than square to leave some margin)
         let radius = squareSize * 0.35
         
         var path = Path()
@@ -181,6 +163,7 @@ struct CircleShape: Shape {
         return path
     }
 }
+
 struct ArrowShape: Shape {
     let from: Square
     let to: Square
@@ -189,11 +172,6 @@ struct ArrowShape: Shape {
     func path(in rect: CGRect) -> Path {
         let squareSize = boardSize / 8
         
-        // Calculate center points of squares
-        // SwiftUI drawing coordinates: y=0 at TOP, increasing downward
-        // But we want rank 8 at top, rank 1 at bottom
-        // So rank 1 (index 0) should be at bottom: y = 7 * squareSize + squareSize/2
-        // rank 8 (index 7) should be at top: y = 0 * squareSize + squareSize/2
         let fromPoint = CGPoint(
             x: CGFloat(from.file.rawValue) * squareSize + squareSize / 2,
             y: CGFloat(7 - from.rank.rawValue) * squareSize + squareSize / 2
@@ -206,22 +184,18 @@ struct ArrowShape: Shape {
         
         print("🎯 Arrow from \(from) (\(fromPoint)) to \(to) (\(toPoint))")
         
-        // Calculate arrow properties
         let dx = toPoint.x - fromPoint.x
         let dy = toPoint.y - fromPoint.y
         let length = sqrt(dx * dx + dy * dy)
         
         guard length > 0 else { return Path() }
         
-        // Normalize direction
         let unitX = dx / length
         let unitY = dy / length
         
-        // Arrow dimensions
         let arrowHeadLength = max(12, boardSize / 30)
         let arrowHeadWidth = max(6, boardSize / 50)
         
-        // Shorten arrow to avoid overlapping pieces
         let shortenBy = squareSize * 0.2
         let adjustedFromPoint = CGPoint(
             x: fromPoint.x + unitX * shortenBy,
@@ -232,14 +206,12 @@ struct ArrowShape: Shape {
             y: toPoint.y - unitY * shortenBy
         )
         
-        // Calculate arrow head
         let arrowTip = adjustedToPoint
         let arrowBase = CGPoint(
             x: arrowTip.x - unitX * arrowHeadLength,
             y: arrowTip.y - unitY * arrowHeadLength
         )
         
-        // Perpendicular vector for arrow head
         let perpX = -unitY
         let perpY = unitX
         
@@ -253,7 +225,6 @@ struct ArrowShape: Shape {
             y: arrowBase.y - perpY * arrowHeadWidth
         )
         
-        // Create path
         var path = Path()
         
         // Arrow shaft
@@ -302,15 +273,21 @@ struct ArrowDrawingView: View {
     }
 }
 
-// MARK: - Lichess-style Square View
-struct LichessSquareView: View {
+// MARK: - Interactive Square View (Fixed for click detection)
+struct InteractiveSquareView: View {
     let square: Square
     let piece: Piece?
     let isHighlighted: Bool
     let isLastMoveSquare: Bool
+    let isValidMoveTarget: Bool
     let arrowManager: ArrowManager
+    let onPieceMove: (Square, Square) -> Void
+    let boardSize: CGFloat
     
     @State private var isHovered = false
+    @State private var isDragging = false
+    @State private var dragOffset = CGSize.zero
+    @State private var isPieceSelected = false
     
     private var baseSquareColor: Color {
         let isLight = (square.file.rawValue + square.rank.rawValue) % 2 == 0
@@ -318,7 +295,9 @@ struct LichessSquareView: View {
     }
     
     private var finalSquareColor: Color {
-        if isHighlighted {
+        if isValidMoveTarget {
+            return Color.green.opacity(0.6)
+        } else if isHighlighted || isPieceSelected {
             return Color.yellow.opacity(0.8)
         } else if isLastMoveSquare {
             let isLight = (square.file.rawValue + square.rank.rawValue) % 2 == 0
@@ -335,7 +314,7 @@ struct LichessSquareView: View {
             Rectangle()
                 .fill(finalSquareColor)
             
-            if isHighlighted {
+            if isHighlighted || isPieceSelected {
                 Rectangle()
                     .stroke(Color.orange, lineWidth: 3)
             }
@@ -345,10 +324,95 @@ struct LichessSquareView: View {
                     .stroke(Color.green, lineWidth: 3)
             }
             
+            if isValidMoveTarget {
+                Circle()
+                    .fill(Color.green.opacity(0.8))
+                    .frame(width: 20, height: 20)
+            }
+            
             if let piece = piece {
                 Image(piece.imageName)
                     .resizable()
                     .scaledToFit()
+                    .offset(dragOffset)
+                    .scaleEffect(isDragging ? 1.1 : 1.0)
+                    .shadow(color: isDragging ? .black.opacity(0.5) : .clear, radius: isDragging ? 8 : 0)
+                    .zIndex(isDragging ? 1000 : 1)
+                    .onTapGesture {
+                        print("🎯 PIECE TAP: \(piece.type) at \(square)")
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("SquareSelected"),
+                            object: square
+                        )
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 3, coordinateSpace: .named("ChessBoard"))
+                            .onChanged { value in
+                                if !isDragging {
+                                    isDragging = true
+                                    isPieceSelected = true
+                                    print("🎯 DRAG START: \(piece.type) at \(square)")
+                                    NotificationCenter.default.post(
+                                        name: NSNotification.Name("PieceDragStarted"),
+                                        object: square
+                                    )
+                                }
+                                dragOffset = value.translation
+                            }
+                            .onEnded { value in
+                                print("🎯 DRAG END: translation=\(value.translation), location=\(value.location)")
+                                print("🎯 DRAG START SQUARE: \(square) (file=\(square.file.rawValue), rank=\(square.rank.rawValue))")
+                                print("🎯 BOARD SIZE: \(boardSize)")
+                                
+                                isDragging = false
+                                dragOffset = .zero
+                                isPieceSelected = false
+                                
+                                // Calculate target square with extensive debugging
+                                let squareSize = boardSize / 8
+                                let rawTargetFile = value.location.x / squareSize
+                                let rawTargetRank = value.location.y / squareSize
+                                
+                                print("🎯 RAW COORDINATES: x=\(value.location.x), y=\(value.location.y)")
+                                print("🎯 SQUARE SIZE: \(squareSize)")
+                                print("🎯 RAW TARGET: file=\(rawTargetFile), rank=\(rawTargetRank)")
+                                
+                                // Try different coordinate mappings
+                                let targetFile1 = Int(rawTargetFile)
+                                let targetRank1 = Int(rawTargetRank)
+                                
+                                let targetFile2 = Int(rawTargetFile)
+                                let targetRank2 = 7 - Int(rawTargetRank)
+                                
+                                print("🎯 OPTION 1: file=\(targetFile1), rank=\(targetRank1)")
+                                print("🎯 OPTION 2: file=\(targetFile2), rank=\(targetRank2)")
+                                
+                                // Use option 2 (with rank inversion) but with bounds checking
+                                let targetFile = targetFile2
+                                let targetRank = targetRank2
+                                
+                                print("🎯 FINAL TARGET: file=\(targetFile), rank=\(targetRank)")
+                                
+                                // Ensure coordinates are within bounds
+                                if targetFile >= 0 && targetFile < 8 && targetRank >= 0 && targetRank < 8,
+                                   let file = File(rawValue: targetFile),
+                                   let rank = Rank(rawValue: targetRank) {
+                                    let targetSquare = Square(file: file, rank: rank)
+                                    print("🎯 MOVE ATTEMPT: \(square) -> \(targetSquare)")
+                                    if targetSquare != square {
+                                        onPieceMove(square, targetSquare)
+                                    } else {
+                                        print("🎯 Same square, no move")
+                                    }
+                                } else {
+                                    print("🎯 TARGET OUT OF BOUNDS: file=\(targetFile), rank=\(targetRank)")
+                                }
+                                
+                                NotificationCenter.default.post(
+                                    name: NSNotification.Name("PieceDragEnded"),
+                                    object: nil
+                                )
+                            }                   )
             }
             
             if isHighlighted {
@@ -358,27 +422,41 @@ struct LichessSquareView: View {
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .onHover { hovering in
-            isHovered = hovering
-            if hovering && arrowManager.isDrawing {
-                arrowManager.updatePreview(to: square)
+        .onTapGesture {
+            print("🎯 SQUARE TAP: \(square) (piece: \(piece != nil ? String(describing: piece!.type) : "none"))")
+            if piece == nil {
+                // Empty square - try to move selected piece here
+                print("🎯 EMPTY SQUARE TARGET: \(square)")
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("SquareTargeted"),
+                    object: square
+                )
             }
         }
-        .onTapGesture {
-            // Handle regular clicks for finishing arrows
-            if arrowManager.isDrawing {
-                arrowManager.finishDrawing(to: square)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareSelected"))) { notification in
+            if let selectedSquare = notification.object as? Square {
+                isPieceSelected = (selectedSquare == square)
+                print("🎯 SELECTION UPDATE: \(square) selected=\(isPieceSelected)")
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceDragEnded"))) { _ in
+            isPieceSelected = false
         }
     }
 }
 
-// MARK: - Board Container with Right-Click Detection
-struct LichessChessBoard: View {
+// MARK: - Interactive Chess Board (Simplified working version)
+struct InteractiveChessBoard: View {
     let board: Board
     let highlightManager: MoveHighlightManager
     @Binding var boardSize: CGFloat
     @StateObject private var arrowManager = ArrowManager()
+    @ObservedObject var gameViewModel: GameViewModel
+    
+    @State private var validMoveTargets: Set<Square> = []
     
     private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
@@ -391,17 +469,24 @@ struct LichessChessBoard: View {
                         let square = Square(file: File(rawValue: fileIndex)!, rank: Rank(rawValue: rankIndex)!)
                         let piece = board.piece(at: square)
                         
-                        LichessSquareView(
+                        InteractiveSquareView(
                             square: square,
                             piece: piece,
                             isHighlighted: highlightManager.isHighlighted(square),
                             isLastMoveSquare: highlightManager.isLastMoveSquare(square),
-                            arrowManager: arrowManager
+                            isValidMoveTarget: validMoveTargets.contains(square),
+                            arrowManager: arrowManager,
+                            onPieceMove: { from, to in
+                                print("🎯 BOARD: Move callback \(from) -> \(to)")
+                                gameViewModel.attemptMove(from: from, to: to)
+                            },
+                            boardSize: boardSize
                         )
                     }
                 }
             }
             .frame(width: boardSize, height: boardSize)
+            .coordinateSpace(name: "ChessBoard")
             
             // Arrow overlay (middle layer)
             ArrowDrawingView(
@@ -413,13 +498,79 @@ struct LichessChessBoard: View {
             .frame(width: boardSize, height: boardSize)
             .allowsHitTesting(false)
             
-            // Event handling overlay (top layer - captures all events)
-            LichessBoardBackground(arrowManager: arrowManager, boardSize: boardSize)
+            // Simple right-click detector (top layer)
+            SimpleRightClickDetector(arrowManager: arrowManager, boardSize: boardSize)
                 .frame(width: boardSize, height: boardSize)
-                .allowsHitTesting(true) // This should capture all mouse events
         }
         .border(Color.black, width: 1)
-        // Add keyboard shortcuts for clearing arrows
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareSelected"))) { notification in
+            if let square = notification.object as? Square {
+                print("🎯 BOARD: Square selected notification for \(square)")
+                gameViewModel.selectSquare(square)
+                updateValidMoveTargets()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareTargeted"))) { notification in
+            if let targetSquare = notification.object as? Square,
+               let selectedSquare = gameViewModel.selectedSquare {
+                print("🎯 BOARD: Square targeted \(targetSquare), selected=\(selectedSquare)")
+                gameViewModel.attemptMove(from: selectedSquare, to: targetSquare)
+                updateValidMoveTargets()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceDragStarted"))) { notification in
+            if let square = notification.object as? Square {
+                print("🎯 BOARD: Piece drag started at \(square)")
+                gameViewModel.selectSquare(square)
+                updateValidMoveTargets()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceMoveCompleted"))) { notification in
+            if let moveData = notification.object as? [String: Square],
+               let fromSquare = moveData["from"],
+               let toSquare = moveData["to"] {
+                print("🎯 BOARD: Received move completion \(fromSquare) -> \(toSquare)")
+                
+                // CRITICAL: Ensure the piece is selected and valid moves are generated before attempting the move
+                print("🎯 BOARD: Ensuring piece selection before drag move")
+                gameViewModel.selectSquare(fromSquare)
+                
+                // Give a tiny delay to ensure the selection and valid move generation completes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                    print("🎯 BOARD: Now attempting drag move with \(gameViewModel.validMoves.count) valid moves")
+                    gameViewModel.attemptMove(from: fromSquare, to: toSquare)
+                    updateValidMoveTargets()
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SmartSquareClick"))) { notification in
+            if let square = notification.object as? Square {
+                print("🎯 BOARD: Smart click on \(square)")
+                
+                // Check if we already have a piece selected
+                if let selectedSquare = gameViewModel.selectedSquare {
+                    // We have a selected piece - check if this click is on a valid target
+                    let validTargets = Set(gameViewModel.validMoves.map { $0.to })
+                    if validTargets.contains(square) {
+                        // Valid target - make the move!
+                        print("🎯 BOARD: Making move \(selectedSquare) -> \(square)")
+                        gameViewModel.attemptMove(from: selectedSquare, to: square)
+                    } else {
+                        // Not a valid target - try to select this square instead
+                        print("🎯 BOARD: Not valid target, selecting \(square)")
+                        gameViewModel.selectSquare(square)
+                    }
+                } else {
+                    // No piece selected - try to select this square
+                    print("🎯 BOARD: No selection, selecting \(square)")
+                    gameViewModel.selectSquare(square)
+                }
+                updateValidMoveTargets()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceDragEnded"))) { _ in
+            updateValidMoveTargets() // Clear on drag end
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ClearArrows"))) { _ in
             arrowManager.clearAllArrows()
         }
@@ -432,31 +583,224 @@ struct LichessChessBoard: View {
             }
         }
     }
+    
+    private func updateValidMoveTargets() {
+        let newTargets = Set(gameViewModel.validMoves.map { $0.to })
+        if newTargets != validMoveTargets {
+            validMoveTargets = newTargets
+        }
+        print("🎯 BOARD: Updated valid move targets: \(validMoveTargets)")
+    }
 }
 
-// MARK: - Board Background for Event Handling
-struct LichessBoardBackground: NSViewRepresentable {
+// MARK: - Simple Right-Click Detector
+struct SimpleRightClickDetector: NSViewRepresentable {
+    @ObservedObject var arrowManager: ArrowManager
+    let boardSize: CGFloat
+    
+    func makeNSView(context: Context) -> SimpleRightClickView {
+        let view = SimpleRightClickView()
+        view.arrowManager = arrowManager
+        view.boardSize = boardSize
+        return view
+    }
+    
+    func updateNSView(_ nsView: SimpleRightClickView, context: Context) {
+        nsView.arrowManager = arrowManager
+        nsView.boardSize = boardSize
+    }
+}
+
+class SimpleRightClickView: NSView {
+    var arrowManager: ArrowManager?
+    var boardSize: CGFloat = 350
+    
+    // Track piece dragging state
+    private var isDraggingPiece = false
+    private var dragStartSquare: Square?
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupView()
+    }
+    
+    private func setupView() {
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.clear.cgColor
+    }
+    
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return self
+    }
+    
+    // Handle right-clicks for arrows
+    override func rightMouseDown(with event: NSEvent) {
+        print("🔴 Right mouse down detected")
+        guard let arrowManager = arrowManager else { return }
+        
+        let location = convert(event.locationInWindow, from: nil)
+        if let square = pointToSquare(location) {
+            arrowManager.startDrawing(from: square)
+        }
+    }
+    
+    override func rightMouseDragged(with event: NSEvent) {
+        guard let arrowManager = arrowManager else { return }
+        
+        let location = convert(event.locationInWindow, from: nil)
+        if let square = pointToSquare(location) {
+            arrowManager.updatePreview(to: square)
+        }
+    }
+    
+    override func rightMouseUp(with event: NSEvent) {
+        print("🔴 Right mouse up")
+        guard let arrowManager = arrowManager else { return }
+        
+        let location = convert(event.locationInWindow, from: nil)
+        if let square = pointToSquare(location) {
+            arrowManager.finishDrawing(to: square)
+        } else {
+            arrowManager.cancelDrawing()
+        }
+    }
+    
+    // Handle left-clicks and drags for piece movement
+    // Handle left-clicks and drags for piece movement
+    override func mouseDown(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        if let square = pointToSquare(location) {
+            print("🎯 Left mouse down at \(square)")
+            dragStartSquare = square
+            isDraggingPiece = false
+            
+            // Don't send selection notification yet - wait for mouseUp to see if it's a click or drag
+        }
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let startSquare = dragStartSquare else { return }
+        
+        if !isDraggingPiece {
+            // First drag event - start piece dragging
+            isDraggingPiece = true
+            print("🎯 Started dragging from \(startSquare)")
+            NotificationCenter.default.post(
+                name: NSNotification.Name("SquareSelected"),
+                object: startSquare
+            )
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PieceDragStarted"),
+                object: startSquare
+            )
+        }
+        
+        let location = convert(event.locationInWindow, from: nil)
+        print("🎯 Dragging to location \(location)")
+    }
+
+    override func keyDown(with event: NSEvent) {
+        let keyCode = event.keyCode
+        print("🎹 Key pressed: \(event.charactersIgnoringModifiers ?? "unknown"), keyCode: \(keyCode)")
+        
+        if keyCode == 15 { // "r" key
+            print("🎹 R key pressed - clearing all arrows")
+            arrowManager?.clearAllArrowsForAllMoves()
+        } else if keyCode == 51 { // Delete key
+            print("🎹 Delete key pressed - clearing arrows for current move")
+            arrowManager?.clearAllArrows()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        print("🎹 SimpleRightClickView became first responder")
+        return super.becomeFirstResponder()
+    }
+    
+    override func mouseUp(with event: NSEvent) {
+        defer {
+            // Reset drag state AFTER processing
+            let wasDragging = isDraggingPiece
+            dragStartSquare = nil
+            isDraggingPiece = false
+            if wasDragging {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PieceDragEnded"),
+                    object: nil
+                )
+            }
+        }
+        
+        guard let startSquare = dragStartSquare else { return }
+        
+        let location = convert(event.locationInWindow, from: nil)
+        if let endSquare = pointToSquare(location) {
+            print("🎯 Mouse up at \(endSquare), startSquare: \(startSquare), isDragging: \(isDraggingPiece)")
+            
+            if isDraggingPiece && endSquare != startSquare {
+                // Drag and drop move
+                print("🎯 Completing drag move \(startSquare) -> \(endSquare)")
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PieceMoveCompleted"),
+                    object: ["from": startSquare, "to": endSquare]
+                )
+            } else if !isDraggingPiece {
+                // This was a simple click, not a drag
+                print("🎯 Click on \(endSquare) - sending smart click notification")
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("SmartSquareClick"),
+                    object: endSquare
+                )
+            }
+        }
+    }
+    
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+    
+    private func pointToSquare(_ point: CGPoint) -> Square? {
+        let squareSize = boardSize / 8
+        let fileIndex = Int(point.x / squareSize)
+        let rankIndex = Int(point.y / squareSize)
+        
+        guard fileIndex >= 0, fileIndex < 8, rankIndex >= 0, rankIndex < 8,
+              let file = File(rawValue: fileIndex),
+              let rank = Rank(rawValue: rankIndex) else {
+            return nil
+        }
+        
+        return Square(file: file, rank: rank)
+    }
+}
+
+struct RightClickDetector: NSViewRepresentable {
     @ObservedObject var arrowManager: ArrowManager
     let boardSize: CGFloat
     
     func makeNSView(context: Context) -> NSView {
-        print("Creating LichessBoardView with size: \(boardSize)")
-        let view = LichessBoardView()
+        let view = RightClickView()
         view.arrowManager = arrowManager
         view.boardSize = boardSize
         return view
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        print("Updating LichessBoardView with size: \(boardSize)")
-        if let view = nsView as? LichessBoardView {
+        if let view = nsView as? RightClickView {
             view.arrowManager = arrowManager
             view.boardSize = boardSize
         }
     }
 }
 
-class LichessBoardView: NSView {
+class RightClickView: NSView {
     var arrowManager: ArrowManager?
     var boardSize: CGFloat = 350
     
@@ -471,194 +815,57 @@ class LichessBoardView: NSView {
     }
     
     private func setupView() {
-        // Disable context menu to prevent interference
-        menu = nil
-        // Make sure we can receive mouse events
         wantsLayer = true
-        needsDisplay = true
-        // Make the view transparent so board squares show through
         layer?.backgroundColor = NSColor.clear.cgColor
     }
     
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        setupView()
-    }
-    
-    override func viewDidMoveToSuperview() {
-        super.viewDidMoveToSuperview()
-        if superview != nil {
-            print("Board view added to superview, frame: \(frame)")
-            // Become first responder to receive events
-            window?.makeFirstResponder(self)
-        }
-    }
-    
-    // Override all mouse events and add extensive debugging
-    override func mouseDown(with event: NSEvent) {
-        print("🔵 Left mouse down detected, modifiers: \(event.modifierFlags)")
-        
-        // Check for Control+Click (alternative to right-click)
-        if event.modifierFlags.contains(.control) {
-            print("🟢 Control+Click detected - treating as right click")
-            handleRightClick(event)
-        } else {
-            print("🔵 Regular left click")
-            // Don't call super - we want to handle all events
-        }
-    }
-    
-    override func mouseDragged(with event: NSEvent) {
-        print("🔵 Left drag detected")
-        if event.modifierFlags.contains(.control) {
-            print("🟢 Control+Drag detected")
-            handleRightDrag(event)
-        }
-        // Don't call super
-    }
-    
-    override func mouseUp(with event: NSEvent) {
-        print("🔵 Left mouse up detected")
-        if event.modifierFlags.contains(.control) {
-            print("🟢 Control+Up detected")
-            handleRightUp(event)
-        }
-        // Don't call super
-    }
-    
     override func rightMouseDown(with event: NSEvent) {
-        print("🔴 Right mouse down detected at window location: \(event.locationInWindow)")
-        handleRightClick(event)
+        print("🔴 Right mouse down detected")
+        guard let arrowManager = arrowManager else { return }
+        
+        let location = convert(event.locationInWindow, from: nil)
+        if let square = pointToSquare(location) {
+            arrowManager.startDrawing(from: square)
+        }
     }
     
     override func rightMouseDragged(with event: NSEvent) {
-        print("🔴 Right mouse dragged")
-        handleRightDrag(event)
-    }
-    
-    override func rightMouseUp(with event: NSEvent) {
-        print("🔴 Right mouse up")
-        handleRightUp(event)
-    }
-    
-    // Add otherMouseDown to catch all other button events
-    override func otherMouseDown(with event: NSEvent) {
-        print("🟡 Other mouse down, button: \(event.buttonNumber), clickCount: \(event.clickCount)")
-        super.otherMouseDown(with: event)
-    }
-    
-    private func handleRightClick(_ event: NSEvent) {
-        guard let arrowManager = arrowManager else {
-            print("❌ No arrow manager available")
-            return
-        }
-        
-        let location = convert(event.locationInWindow, from: nil)
-        print("📍 Converted location: \(location), view bounds: \(bounds)")
-        
-        if let square = pointToSquare(location) {
-            arrowManager.startDrawing(from: square)
-            print("✅ Started drawing arrow from \(square)")
-        } else {
-            print("❌ Location \(location) is outside board bounds")
-        }
-    }
-    
-    private func handleRightDrag(_ event: NSEvent) {
         guard let arrowManager = arrowManager else { return }
         
         let location = convert(event.locationInWindow, from: nil)
         if let square = pointToSquare(location) {
             arrowManager.updatePreview(to: square)
-            print("🔄 Dragging to \(square)")
         }
     }
     
-    private func handleRightUp(_ event: NSEvent) {
+    override func rightMouseUp(with event: NSEvent) {
+        print("🔴 Right mouse up")
         guard let arrowManager = arrowManager else { return }
         
         let location = convert(event.locationInWindow, from: nil)
         if let square = pointToSquare(location) {
             arrowManager.finishDrawing(to: square)
-            print("🏁 Finished arrow at \(square)")
         } else {
             arrowManager.cancelDrawing()
-            print("🚫 Cancelled arrow drawing")
-        }
-    }
-    
-    // Add keyboard shortcuts for clearing arrows
-    override func keyDown(with event: NSEvent) {
-        let keyCode = event.keyCode
-        print("🎹 Key pressed: \(event.charactersIgnoringModifiers ?? "unknown"), keyCode: \(keyCode)")
-        
-        if keyCode == 51 { // Delete key
-            arrowManager?.clearAllArrows()
-            print("🗑️ Cleared arrows for current move")
-        } else if keyCode == 51 && event.modifierFlags.contains(.command) { // Cmd+Delete
-            arrowManager?.clearAllArrowsForAllMoves()
-            print("🗑️ Cleared ALL arrows for ALL moves")
-        } else if keyCode == 15 { // "r" key
-            arrowManager?.clearAllArrowsForAllMoves()
-            print("🔄 Reset: Cleared ALL arrows for ALL moves")
-        } else {
-            super.keyDown(with: event)
         }
     }
     
     private func pointToSquare(_ point: CGPoint) -> Square? {
         let squareSize = boardSize / 8
         let fileIndex = Int(point.x / squareSize)
-        
-        // NSView coordinate system: y=0 at bottom, y=boardSize at top
-        // Our board layout: rank 1 at bottom, rank 8 at top
-        // So we can use the point.y directly without flipping
         let ySquareIndex = Int(point.y / squareSize)
-        
-        print("📐 Raw Point \(point)")
-        print("   - squareSize: \(squareSize)")
-        print("   - fileIndex: \(fileIndex)")
-        print("   - ySquareIndex: \(ySquareIndex)")
-        
-        // ySquareIndex 0 = rank 1 (bottom), ySquareIndex 7 = rank 8 (top)
         let rankIndex = ySquareIndex
-        
-        print("   - calculated rankIndex: \(rankIndex)")
         
         guard fileIndex >= 0, fileIndex < 8, rankIndex >= 0, rankIndex < 8,
               let file = File(rawValue: fileIndex),
               let rank = Rank(rawValue: rankIndex) else {
-            print("❌ Invalid square coordinates")
             return nil
         }
         
-        let square = Square(file: file, rank: rank)
-        print("📍 Final square: \(square) (file=\(file.description), rank=\(rank.description))")
-        return square
-    }
-    
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        print("🎯 acceptsFirstMouse called")
-        return true
+        return Square(file: file, rank: rank)
     }
     
     override var acceptsFirstResponder: Bool {
-        print("🎯 acceptsFirstResponder called")
         return true
-    }
-    
-    override func becomeFirstResponder() -> Bool {
-        print("🎯 becomeFirstResponder called")
-        return super.becomeFirstResponder()
-    }
-    
-    // Make sure hit testing works and reduce spam
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        let result = super.hitTest(point)
-        // Only print occasionally to reduce spam
-        if Int.random(in: 0...50) == 0 {
-            print("🎯 Hit test sample at \(point) returned: \(String(describing: result))")
-        }
-        return result
     }
 }
