@@ -263,21 +263,6 @@ class GameViewModel: ObservableObject {
             return []
         }
         
-        // Proper turn calculation based on move index
-        let currentPlayer: PieceColor
-        if isInVariationMode && currentVariation != nil {
-            // In variation mode
-            let baseMove = currentVariation!.startingMoveIndex
-            let variationMoves = currentVariation!.moves.count
-            let totalMoves = baseMove + variationMoves
-            currentPlayer = totalMoves % 2 == 0 ? .white : .black
-        } else {
-            // In main line - even moves = white's turn, odd moves = black's turn
-            currentPlayer = currentMoveIndex % 2 == 0 ? .white : .black
-        }
-
-        print("🔍 Move index: \(currentMoveIndex), Current player: \(currentPlayer)")
-        
         print("🔍 Trying BOARD system for \(piece.type) at \(square)")
         
         // First try the proper board move generation
@@ -295,82 +280,224 @@ class GameViewModel: ObservableObject {
             return boardMoves
         }
         
-        // If board system fails, fall back to MUCH more restrictive manual system
-        print("🔍 BOARD system failed, using restrictive manual system")
+        // Manual system with special moves
+        print("🔍 BOARD system failed, using enhanced manual system")
+        
+        // Proper turn calculation
+        let currentPlayer: PieceColor
+        if isInVariationMode && currentVariation != nil {
+            let baseMove = currentVariation!.startingMoveIndex
+            let variationMoves = currentVariation!.moves.count
+            let totalMoves = baseMove + variationMoves
+            currentPlayer = totalMoves % 2 == 0 ? .white : .black
+        } else {
+            currentPlayer = currentMoveIndex % 2 == 0 ? .white : .black
+        }
+        
+        guard piece.color == currentPlayer else {
+            print("🔍 Wrong color - piece is \(piece.color), current player is \(currentPlayer)")
+            return []
+        }
         
         var moves: [Move] = []
         
         switch piece.type {
         case .pawn:
-            // Proper pawn moves with occupancy checking
-            if piece.color == .white {
-                if square.rank == .two {
-                    // Check e3
-                    let e3 = Square(file: square.file, rank: .three)
-                    if game.board.piece(at: e3) == nil {
-                        moves.append(Move(from: square, to: e3, piece: piece))
-                        // Check e4 only if e3 is free
-                        let e4 = Square(file: square.file, rank: .four)
-                        if game.board.piece(at: e4) == nil {
-                            moves.append(Move(from: square, to: e4, piece: piece))
-                        }
-                    }
-                }
-                // Add pawn captures if enemy pieces are present
-                for fileOffset in [-1, 1] {
-                    if let newFile = File(rawValue: square.file.rawValue + fileOffset),
-                       let newRank = Rank(rawValue: square.rank.rawValue + 1) {
-                        let targetSquare = Square(file: newFile, rank: newRank)
-                        if let targetPiece = game.board.piece(at: targetSquare),
-                           targetPiece.color != piece.color {
-                            moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece))
-                        }
-                    }
-                }
-            }
-            // Add black pawn logic if needed
+            moves.append(contentsOf: generatePawnMovesWithSpecial(piece: piece, at: square))
             
         case .king:
-            // King can only move one square in any direction
-            let kingMoves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-            for (fileOffset, rankOffset) in kingMoves {
-                if let newFile = File(rawValue: square.file.rawValue + fileOffset),
-                   let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
-                    let targetSquare = Square(file: newFile, rank: newRank)
-                    let targetPiece = game.board.piece(at: targetSquare)
-                    
-                    // King can move to empty squares or capture enemy pieces
-                    if targetPiece == nil || targetPiece!.color != piece.color {
-                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece))
-                    }
-                }
-            }
+            moves.append(contentsOf: generateKingMovesWithCastling(piece: piece, at: square))
             
         case .knight:
-            // Proper knight moves
-            let knightOffsets = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
-            for (fileOffset, rankOffset) in knightOffsets {
-                if let newFile = File(rawValue: square.file.rawValue + fileOffset),
-                   let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
-                    let targetSquare = Square(file: newFile, rank: newRank)
-                    let targetPiece = game.board.piece(at: targetSquare)
-                    
-                    if targetPiece == nil || targetPiece!.color != piece.color {
-                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece))
+            moves.append(contentsOf: generateKnightMoves(piece: piece, at: square))
+            
+        case .bishop:
+            moves.append(contentsOf: generateBishopMoves(piece: piece, at: square))
+            
+        case .rook:
+            moves.append(contentsOf: generateRookMoves(piece: piece, at: square))
+            
+        case .queen:
+            moves.append(contentsOf: generateQueenMoves(piece: piece, at: square))
+        }
+        
+        print("🔍 Enhanced manual system generated \(moves.count) moves")
+        return moves
+    }
+
+    // MARK: - Enhanced Move Generation with Special Moves
+
+    private func generatePawnMovesWithSpecial(piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let direction = piece.color == .white ? 1 : -1
+        let startingRank = piece.color == .white ? Rank.two : Rank.seven
+        let promotionRank = piece.color == .white ? Rank.eight : Rank.one
+        
+        // Forward moves
+        if let oneSquareUp = Rank(rawValue: square.rank.rawValue + direction) {
+            let targetSquare = Square(file: square.file, rank: oneSquareUp)
+            if game.board.piece(at: targetSquare) == nil {
+                // Check for promotion
+                if oneSquareUp == promotionRank {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, flag: .promotion(.queen)))
+                    print("🔍 Added pawn promotion move \(square) -> \(targetSquare)")
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece))
+                }
+                
+                // Double move from starting position
+                if square.rank == startingRank,
+                   let twoSquaresUp = Rank(rawValue: square.rank.rawValue + 2 * direction) {
+                    let doubleTargetSquare = Square(file: square.file, rank: twoSquaresUp)
+                    if game.board.piece(at: doubleTargetSquare) == nil {
+                        moves.append(Move(from: square, to: doubleTargetSquare, piece: piece, flag: .doublePawnPush))
                     }
                 }
             }
-            
-        default:
-            // For bishops, rooks, queens - don't generate any moves for now
-            // This prevents illegal moves until we fix the board system
-            print("🔍 No manual moves for \(piece.type) - need to fix board system")
-            moves = []
         }
         
-        print("🔍 Manual system generated \(moves.count) moves")
+        // Pawn captures (including en passant)
+        for fileOffset in [-1, 1] {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + direction) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                
+                if let targetPiece = game.board.piece(at: targetSquare), targetPiece.color != piece.color {
+                    // Regular capture
+                    if newRank == promotionRank {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .promotion(.queen)))
+                    } else {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                } else if game.board.piece(at: targetSquare) == nil {
+                    // Check for en passant
+                    if (piece.color == .white && square.rank == .five) || (piece.color == .black && square.rank == .four) {
+                        let capturedPawnSquare = Square(file: newFile, rank: square.rank)
+                        if let capturedPawn = game.board.piece(at: capturedPawnSquare),
+                           capturedPawn.type == .pawn && capturedPawn.color != piece.color {
+                            // Simple en passant check: if there's an enemy pawn next to us, allow en passant
+                            // (In a full implementation, we'd check if it just moved 2 squares)
+                            moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: capturedPawn, flag: .enPassantCapture))
+                            print("🔍 Added en passant move \(square) -> \(targetSquare)")
+                        }
+                    }
+                }
+            }
+        }
+        
         return moves
     }
+
+    private func generateKingMovesWithCastling(piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        
+        // Regular king moves
+        let kingMoves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        for (fileOffset, rankOffset) in kingMoves {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                let targetPiece = game.board.piece(at: targetSquare)
+                
+                if targetPiece == nil || targetPiece!.color != piece.color {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece))
+                }
+            }
+        }
+        
+        // Castling (simplified - assumes king and rooks haven't moved)
+        let homeRank = piece.color == .white ? Rank.one : Rank.eight
+        if square.file == .E && square.rank == homeRank {
+            // King-side castling
+            let kingsideRookSquare = Square(file: .H, rank: homeRank)
+            let f1 = Square(file: .F, rank: homeRank)
+            let g1 = Square(file: .G, rank: homeRank)
+            
+            if let rook = game.board.piece(at: kingsideRookSquare),
+               rook.type == .rook && rook.color == piece.color,
+               game.board.piece(at: f1) == nil,
+               game.board.piece(at: g1) == nil {
+                moves.append(Move(from: square, to: g1, piece: piece, flag: .kingSideCastling))
+                print("🔍 Added king-side castling")
+            }
+            
+            // Queen-side castling
+            let queensideRookSquare = Square(file: .A, rank: homeRank)
+            let d1 = Square(file: .D, rank: homeRank)
+            let c1 = Square(file: .C, rank: homeRank)
+            let b1 = Square(file: .B, rank: homeRank)
+            
+            if let rook = game.board.piece(at: queensideRookSquare),
+               rook.type == .rook && rook.color == piece.color,
+               game.board.piece(at: d1) == nil,
+               game.board.piece(at: c1) == nil,
+               game.board.piece(at: b1) == nil {
+                moves.append(Move(from: square, to: c1, piece: piece, flag: .queenSideCastling))
+                print("🔍 Added queen-side castling")
+            }
+        }
+        
+        return moves
+    }
+
+    // Basic sliding piece moves
+    private func generateBishopMoves(piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(piece: piece, at: square, directions: [(-1, -1), (-1, 1), (1, -1), (1, 1)])
+    }
+
+    private func generateRookMoves(piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(piece: piece, at: square, directions: [(-1, 0), (1, 0), (0, -1), (0, 1)])
+    }
+
+    private func generateQueenMoves(piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(piece: piece, at: square, directions: [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
+    }
+
+    private func generateKnightMoves(piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let knightOffsets = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+        
+        for (fileOffset, rankOffset) in knightOffsets {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                let targetPiece = game.board.piece(at: targetSquare)
+                
+                if targetPiece == nil || targetPiece!.color != piece.color {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece))
+                }
+            }
+        }
+        return moves
+    }
+
+    private func generateSlidingMoves(piece: Piece, at square: Square, directions: [(Int, Int)]) -> [Move] {
+        var moves: [Move] = []
+        
+        for (fileDirection, rankDirection) in directions {
+            var currentFile = square.file.rawValue + fileDirection
+            var currentRank = square.rank.rawValue + rankDirection
+            
+            while let file = File(rawValue: currentFile), let rank = Rank(rawValue: currentRank) {
+                let targetSquare = Square(file: file, rank: rank)
+                
+                if let targetPiece = game.board.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                    break // Can't continue past any piece
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece))
+                }
+                
+                currentFile += fileDirection
+                currentRank += rankDirection
+            }
+        }
+        
+        return moves
+    }
+
     private var totalMovesPlayed: Int {
         return (pgnGame?.moves.count ?? 0) + (currentVariation?.moves.count ?? 0)
     }
