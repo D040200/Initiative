@@ -24,6 +24,36 @@ struct ChessArrow: Identifiable, Equatable {
     }
 }
 
+// MARK: - Cursor Piece Manager
+class CursorPieceManager: ObservableObject {
+    @Published var cursorPiece: Piece? = nil
+    @Published var cursorPosition: CGPoint = .zero
+    @Published var isActive = false
+    @Published var sourceSquare: Square? = nil
+    
+    func startCursorPiece(_ piece: Piece, from square: Square, at position: CGPoint) {
+        cursorPiece = piece
+        sourceSquare = square
+        cursorPosition = position
+        isActive = true
+        print("🎯 CURSOR: Started cursor piece \(piece.type) from \(square) at \(position) - isActive: \(isActive)")
+    }
+    
+    func updateCursorPosition(_ position: CGPoint) {
+        if isActive {
+            cursorPosition = position
+            print("🎯 CURSOR: Updated position to \(position)")
+        }
+    }
+    
+    func stopCursorPiece() {
+        cursorPiece = nil
+        sourceSquare = nil
+        isActive = false
+        print("🎯 CURSOR: Stopped cursor piece")
+    }
+}
+
 // MARK: - Arrow Manager
 class ArrowManager: ObservableObject {
     @Published var currentArrows: [ChessArrow] = []
@@ -273,6 +303,42 @@ struct ArrowDrawingView: View {
     }
 }
 
+// MARK: - Cursor Piece Overlay
+struct CursorPieceOverlay: View {
+    @ObservedObject var cursorManager: CursorPieceManager
+    let boardSize: CGFloat
+    
+    var body: some View {
+        ZStack {
+            if cursorManager.isActive, let piece = cursorManager.cursorPiece {
+                Image(piece.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: boardSize / 9, height: boardSize / 9)
+                    .position(cursorManager.cursorPosition)
+                    .shadow(color: .black.opacity(0.6), radius: 6, x: 2, y: 2)
+                    .scaleEffect(1.1)
+                    .zIndex(2000)
+                    .allowsHitTesting(false)
+                    .animation(.easeOut(duration: 0.1), value: cursorManager.cursorPosition)
+                    .onAppear {
+                        print("🎯 CURSOR OVERLAY: Showing \(piece.type) at \(cursorManager.cursorPosition)")
+                    }
+            } else {
+                // Debug: Show when cursor is not active
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 1, height: 1)
+                    .onAppear {
+                        print("🎯 CURSOR OVERLAY: Not active - isActive: \(cursorManager.isActive), piece: \(cursorManager.cursorPiece?.type.character ?? Character("?"))")
+                    }
+            }
+        }
+        .frame(width: boardSize, height: boardSize)
+        .clipped()
+    }
+}
+
 // MARK: - Interactive Square View (Fixed for click detection)
 struct InteractiveSquareView: View {
     let square: Square
@@ -281,6 +347,7 @@ struct InteractiveSquareView: View {
     let isLastMoveSquare: Bool
     let isValidMoveTarget: Bool
     let arrowManager: ArrowManager
+    let cursorManager: CursorPieceManager
     let onPieceMove: (Square, Square) -> Void
     let boardSize: CGFloat
     
@@ -288,6 +355,7 @@ struct InteractiveSquareView: View {
     @State private var isDragging = false
     @State private var dragOffset = CGSize.zero
     @State private var isPieceSelected = false
+    @State private var isPieceCursorActive = false
     
     private var baseSquareColor: Color {
         let isLight = (square.file.rawValue + square.rank.rawValue) % 2 == 0
@@ -338,13 +406,7 @@ struct InteractiveSquareView: View {
                     .scaleEffect(isDragging ? 1.1 : 1.0)
                     .shadow(color: isDragging ? .black.opacity(0.5) : .clear, radius: isDragging ? 8 : 0)
                     .zIndex(isDragging ? 1000 : 1)
-                    .onTapGesture {
-                        print("🎯 PIECE TAP: \(piece.type) at \(square)")
-                        NotificationCenter.default.post(
-                            name: NSNotification.Name("SquareSelected"),
-                            object: square
-                        )
-                    }
+                    .opacity(isPieceCursorActive ? 0.2 : 1.0) // More transparent when cursor is active
                     .gesture(
                         DragGesture(minimumDistance: 3, coordinateSpace: .named("ChessBoard"))
                             .onChanged { value in
@@ -444,6 +506,28 @@ struct InteractiveSquareView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceDragEnded"))) { _ in
             isPieceSelected = false
+            isPieceCursorActive = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceMoveCompleted"))) { _ in
+            isPieceCursorActive = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareTargeted"))) { _ in
+            isPieceCursorActive = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MouseDownOnSquare"))) { notification in
+            if let clickedSquare = notification.object as? Square, clickedSquare == square, let piece = piece {
+                print("🎯 MOUSE DOWN ON PIECE: \(piece.type) at \(square)")
+                // Start cursor piece
+                let squareSize = boardSize / 8
+                let centerX = CGFloat(square.file.rawValue) * squareSize + squareSize / 2
+                let centerY = CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
+                
+                DispatchQueue.main.async {
+                    cursorManager.startCursorPiece(piece, from: square, at: CGPoint(x: centerX, y: centerY))
+                    isPieceCursorActive = true
+                    print("🎯 CURSOR ACTIVATED: \(cursorManager.isActive)")
+                }
+            }
         }
     }
 }
@@ -454,6 +538,7 @@ struct InteractiveChessBoard: View {
     let highlightManager: MoveHighlightManager
     @Binding var boardSize: CGFloat
     @StateObject private var arrowManager = ArrowManager()
+    @StateObject private var cursorManager = CursorPieceManager()
     @ObservedObject var gameViewModel: GameViewModel
     
     @State private var validMoveTargets: Set<Square> = []
@@ -476,6 +561,7 @@ struct InteractiveChessBoard: View {
                             isLastMoveSquare: highlightManager.isLastMoveSquare(square),
                             isValidMoveTarget: validMoveTargets.contains(square),
                             arrowManager: arrowManager,
+                            cursorManager: cursorManager,
                             onPieceMove: { from, to in
                                 print("🎯 BOARD: Move callback \(from) -> \(to)")
                                 gameViewModel.attemptMove(from: from, to: to)
@@ -498,9 +584,22 @@ struct InteractiveChessBoard: View {
             .frame(width: boardSize, height: boardSize)
             .allowsHitTesting(false)
             
-            // Simple right-click detector (top layer)
-            SimpleRightClickDetector(arrowManager: arrowManager, boardSize: boardSize)
+            // Cursor piece overlay (top layer)
+            CursorPieceOverlay(cursorManager: cursorManager, boardSize: boardSize)
                 .frame(width: boardSize, height: boardSize)
+                .allowsHitTesting(false)
+            
+            // Mouse tracking and right-click detector (top layer)
+            MouseTrackingView(cursorManager: cursorManager, arrowManager: arrowManager, boardSize: boardSize)
+                .frame(width: boardSize, height: boardSize)
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let location):
+                        cursorManager.updateCursorPosition(location)
+                    case .ended:
+                        break
+                    }
+                }
         }
         .border(Color.black, width: 1)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareSelected"))) { notification in
@@ -582,6 +681,12 @@ struct InteractiveChessBoard: View {
                 arrowManager.setCurrentMove(moveIndex)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PieceMoveCompleted"))) { _ in
+            cursorManager.stopCursorPiece()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareTargeted"))) { _ in
+            cursorManager.stopCursorPiece()
+        }
     }
     
     private func updateValidMoveTargets() {
@@ -593,31 +698,36 @@ struct InteractiveChessBoard: View {
     }
 }
 
-// MARK: - Simple Right-Click Detector
-struct SimpleRightClickDetector: NSViewRepresentable {
+// MARK: - Mouse Tracking View
+struct MouseTrackingView: NSViewRepresentable {
+    @ObservedObject var cursorManager: CursorPieceManager
     @ObservedObject var arrowManager: ArrowManager
     let boardSize: CGFloat
     
-    func makeNSView(context: Context) -> SimpleRightClickView {
-        let view = SimpleRightClickView()
+    func makeNSView(context: Context) -> MouseTrackingNSView {
+        let view = MouseTrackingNSView()
+        view.cursorManager = cursorManager
         view.arrowManager = arrowManager
         view.boardSize = boardSize
         return view
     }
     
-    func updateNSView(_ nsView: SimpleRightClickView, context: Context) {
+    func updateNSView(_ nsView: MouseTrackingNSView, context: Context) {
+        nsView.cursorManager = cursorManager
         nsView.arrowManager = arrowManager
         nsView.boardSize = boardSize
     }
 }
 
-class SimpleRightClickView: NSView {
+class MouseTrackingNSView: NSView {
+    var cursorManager: CursorPieceManager?
     var arrowManager: ArrowManager?
     var boardSize: CGFloat = 350
     
     // Track piece dragging state
     private var isDraggingPiece = false
     private var dragStartSquare: Square?
+    private var trackingArea: NSTrackingArea?
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -632,6 +742,59 @@ class SimpleRightClickView: NSView {
     private func setupView() {
         wantsLayer = true
         layer?.backgroundColor = NSColor.clear.cgColor
+        updateTrackingArea()
+    }
+    
+    private func updateTrackingArea() {
+        if let trackingArea = trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        
+        trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.activeInActiveApp, .mouseMoved, .inVisibleRect, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        )
+        
+        if let trackingArea = trackingArea {
+            addTrackingArea(trackingArea)
+        }
+    }
+    
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        updateTrackingArea()
+    }
+    
+    override func mouseMoved(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        cursorManager?.updateCursorPosition(location)
+        print("🎯 MOUSE: mouseMoved to \(location)")
+    }
+    
+    override func mouseDragged(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        cursorManager?.updateCursorPosition(location)
+        
+        // Handle piece dragging
+        guard let startSquare = dragStartSquare else { return }
+        
+        if !isDraggingPiece {
+            // First drag event - start piece dragging
+            isDraggingPiece = true
+            print("🎯 Started dragging from \(startSquare)")
+            NotificationCenter.default.post(
+                name: NSNotification.Name("SquareSelected"),
+                object: startSquare
+            )
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PieceDragStarted"),
+                object: startSquare
+            )
+        }
+        
+        print("🎯 Dragging to location \(location)")
     }
     
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -671,7 +834,6 @@ class SimpleRightClickView: NSView {
     }
     
     // Handle left-clicks and drags for piece movement
-    // Handle left-clicks and drags for piece movement
     override func mouseDown(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
         if let square = pointToSquare(location) {
@@ -679,29 +841,14 @@ class SimpleRightClickView: NSView {
             dragStartSquare = square
             isDraggingPiece = false
             
-            // Don't send selection notification yet - wait for mouseUp to see if it's a click or drag
-        }
-    }
-
-    override func mouseDragged(with event: NSEvent) {
-        guard let startSquare = dragStartSquare else { return }
-        
-        if !isDraggingPiece {
-            // First drag event - start piece dragging
-            isDraggingPiece = true
-            print("🎯 Started dragging from \(startSquare)")
+            // Check if there's a piece on this square and start cursor piece if so
+            // We need to get the piece information from the board
+            // For now, let's post a notification to start cursor piece
             NotificationCenter.default.post(
-                name: NSNotification.Name("SquareSelected"),
-                object: startSquare
-            )
-            NotificationCenter.default.post(
-                name: NSNotification.Name("PieceDragStarted"),
-                object: startSquare
+                name: NSNotification.Name("MouseDownOnSquare"),
+                object: square
             )
         }
-        
-        let location = convert(event.locationInWindow, from: nil)
-        print("🎯 Dragging to location \(location)")
     }
 
     override func keyDown(with event: NSEvent) {
@@ -738,9 +885,37 @@ class SimpleRightClickView: NSView {
             }
         }
         
+        let location = convert(event.locationInWindow, from: nil)
+        
+        // Stop cursor piece if it's active
+        if cursorManager?.isActive == true {
+            if let sourceSquare = cursorManager?.sourceSquare,
+               let endSquare = pointToSquare(location) {
+                print("🎯 Cursor piece dropped from \(sourceSquare) to \(endSquare)")
+                cursorManager?.stopCursorPiece()
+                
+                if sourceSquare != endSquare {
+                    // This is a move
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("PieceMoveCompleted"),
+                        object: ["from": sourceSquare, "to": endSquare]
+                    )
+                } else {
+                    // Dropped on same square - just select it
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("SmartSquareClick"),
+                        object: endSquare
+                    )
+                }
+            } else {
+                // Dropped outside board - just stop the cursor piece
+                cursorManager?.stopCursorPiece()
+            }
+            return
+        }
+        
         guard let startSquare = dragStartSquare else { return }
         
-        let location = convert(event.locationInWindow, from: nil)
         if let endSquare = pointToSquare(location) {
             print("🎯 Mouse up at \(endSquare), startSquare: \(startSquare), isDragging: \(isDraggingPiece)")
             
