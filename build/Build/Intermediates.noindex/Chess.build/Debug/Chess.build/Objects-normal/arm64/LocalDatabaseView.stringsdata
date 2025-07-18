@@ -1,0 +1,400 @@
+{
+  "source": "/Users/danu/development/Initiative/LocalDatabaseView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Game Database",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 114
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total Games",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 117
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 123
+        }
+      },
+      {
+        "comment": "",
+        "key": "Wins",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 127
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 133
+        }
+      },
+      {
+        "comment": "",
+        "key": "Losses",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 137
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 143
+        }
+      },
+      {
+        "comment": "",
+        "key": "Draws",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 147
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filter",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 177
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search games, players, events...",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 164
+        }
+      },
+      {
+        "comment": "",
+        "key": "Clear",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 168
+        }
+      },
+      {
+        "comment": "",
+        "key": "View Details",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Analyze",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 204
+        }
+      },
+      {
+        "comment": "",
+        "key": "Copy PGN",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 212
+        }
+      },
+      {
+        "comment": "",
+        "key": "Delete",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 218
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ vs %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 257
+        }
+      },
+      {
+        "comment": "",
+        "key": "Import PGN",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 340
+        }
+      },
+      {
+        "comment": "",
+        "key": "Import PGN Games",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 302
+        }
+      },
+      {
+        "comment": "",
+        "key": "or",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 316
+        }
+      },
+      {
+        "comment": "",
+        "key": "Import Games",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 329
+        }
+      },
+      {
+        "comment": "",
+        "key": "Import from File",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 310
+        }
+      },
+      {
+        "comment": "",
+        "key": "Paste PGN Text:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 320
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 346
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 413
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export Database",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 389
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export all games as PGN file",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 404
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export All Games",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 398
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 419
+        }
+      },
+      {
+        "comment": "",
+        "key": "Game Details",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 473
+        }
+      },
+      {
+        "comment": "",
+        "key": "Close",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 479
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save",
+        "location": {
+          "startingColumn": 40,
+          "startingLine": 485
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 485
+        }
+      },
+      {
+        "comment": "",
+        "key": "Game Title",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 506
+        }
+      },
+      {
+        "comment": "",
+        "key": "Game Information",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 526
+        }
+      },
+      {
+        "comment": "",
+        "key": "Notes",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 551
+        }
+      },
+      {
+        "comment": "",
+        "key": "PGN",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 571
+        }
+      },
+      {
+        "comment": "",
+        "key": "New Game",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 634
+        }
+      },
+      {
+        "comment": "",
+        "key": "Game Details",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 620
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 621
+        }
+      },
+      {
+        "comment": "",
+        "key": "White Player",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 622
+        }
+      },
+      {
+        "comment": "",
+        "key": "Black Player",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 623
+        }
+      },
+      {
+        "comment": "",
+        "key": "Event",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 624
+        }
+      },
+      {
+        "comment": "",
+        "key": "Site",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 625
+        }
+      },
+      {
+        "comment": "",
+        "key": "Result",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 627
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 640
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 646
+        }
+      }
+    ]
+  },
+  "version": 1
+}

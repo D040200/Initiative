@@ -1,6 +1,7 @@
 // ArrowDrawing.swift - Fixed version with debugging and proper click detection
 import SwiftUI
 import AppKit
+import Foundation
 
 // MARK: - Circle Highlight Data Structure
 struct ChessCircle: Identifiable, Equatable {
@@ -36,13 +37,16 @@ class CursorPieceManager: ObservableObject {
         sourceSquare = square
         cursorPosition = position
         isActive = true
-        print("🎯 CURSOR: Started cursor piece \(piece.type) from \(square) at \(position) - isActive: \(isActive)")
+        NSLog("🎯 CURSOR MANAGER: Started cursor piece \(piece.type) from \(square) at \(position) - isActive: \(isActive)")
     }
     
     func updateCursorPosition(_ position: CGPoint) {
         if isActive {
             cursorPosition = position
-            print("🎯 CURSOR: Updated position to \(position)")
+            NSLog("🎯 CURSOR MANAGER: Updated position to \(position)")
+            if let sourceSquare = sourceSquare {
+                NSLog("🎯 CURSOR MANAGER: Source square is \(sourceSquare)")
+            }
         }
     }
     
@@ -177,7 +181,7 @@ struct CircleShape: Shape {
         
         let centerPoint = CGPoint(
             x: CGFloat(square.file.rawValue) * squareSize + squareSize / 2,
-            y: CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
+            y: CGFloat(square.rank.rawValue) * squareSize + squareSize / 2
         )
         
         let radius = squareSize * 0.35
@@ -303,6 +307,38 @@ struct ArrowDrawingView: View {
     }
 }
 
+// MARK: - Piece Overlay
+struct PieceOverlay: View {
+    let board: Board
+    let boardSize: CGFloat
+    @ObservedObject var cursorManager: CursorPieceManager
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<8, id: \.self) { rankIndex in
+                ForEach(0..<8, id: \.self) { fileIndex in
+                    let square = Square(file: File(rawValue: fileIndex)!, rank: Rank(rawValue: rankIndex)!)
+                    let piece = board.piece(at: square)
+                    
+                    if let piece = piece {
+                        let squareSize = boardSize / 8
+                        let x = CGFloat(fileIndex) * squareSize + squareSize / 2
+                        let y = CGFloat(7 - rankIndex) * squareSize + squareSize / 2
+                        
+                        Image(piece.imageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: squareSize * 0.9, height: squareSize * 0.9)
+                            .position(x: x, y: y)
+                            .opacity(cursorManager.isActive && cursorManager.sourceSquare == square ? 0.3 : 1.0)
+                    }
+                }
+            }
+        }
+        .frame(width: boardSize, height: boardSize)
+    }
+}
+
 // MARK: - Cursor Piece Overlay
 struct CursorPieceOverlay: View {
     @ObservedObject var cursorManager: CursorPieceManager
@@ -398,83 +434,11 @@ struct InteractiveSquareView: View {
                     .frame(width: 20, height: 20)
             }
             
+            // Piece will be rendered separately in the piece overlay layer
             if let piece = piece {
-                Image(piece.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .offset(dragOffset)
-                    .scaleEffect(isDragging ? 1.1 : 1.0)
-                    .shadow(color: isDragging ? .black.opacity(0.5) : .clear, radius: isDragging ? 8 : 0)
-                    .zIndex(isDragging ? 1000 : 1)
-                    .opacity(isPieceCursorActive ? 0.2 : 1.0) // More transparent when cursor is active
-                    .gesture(
-                        DragGesture(minimumDistance: 3, coordinateSpace: .named("ChessBoard"))
-                            .onChanged { value in
-                                if !isDragging {
-                                    isDragging = true
-                                    isPieceSelected = true
-                                    print("🎯 DRAG START: \(piece.type) at \(square)")
-                                    NotificationCenter.default.post(
-                                        name: NSNotification.Name("PieceDragStarted"),
-                                        object: square
-                                    )
-                                }
-                                dragOffset = value.translation
-                            }
-                            .onEnded { value in
-                                print("🎯 DRAG END: translation=\(value.translation), location=\(value.location)")
-                                print("🎯 DRAG START SQUARE: \(square) (file=\(square.file.rawValue), rank=\(square.rank.rawValue))")
-                                print("🎯 BOARD SIZE: \(boardSize)")
-                                
-                                isDragging = false
-                                dragOffset = .zero
-                                isPieceSelected = false
-                                
-                                // Calculate target square with extensive debugging
-                                let squareSize = boardSize / 8
-                                let rawTargetFile = value.location.x / squareSize
-                                let rawTargetRank = value.location.y / squareSize
-                                
-                                print("🎯 RAW COORDINATES: x=\(value.location.x), y=\(value.location.y)")
-                                print("🎯 SQUARE SIZE: \(squareSize)")
-                                print("🎯 RAW TARGET: file=\(rawTargetFile), rank=\(rawTargetRank)")
-                                
-                                // Try different coordinate mappings
-                                let targetFile1 = Int(rawTargetFile)
-                                let targetRank1 = Int(rawTargetRank)
-                                
-                                let targetFile2 = Int(rawTargetFile)
-                                let targetRank2 = 7 - Int(rawTargetRank)
-                                
-                                print("🎯 OPTION 1: file=\(targetFile1), rank=\(targetRank1)")
-                                print("🎯 OPTION 2: file=\(targetFile2), rank=\(targetRank2)")
-                                
-                                // Use option 2 (with rank inversion) but with bounds checking
-                                let targetFile = targetFile2
-                                let targetRank = targetRank2
-                                
-                                print("🎯 FINAL TARGET: file=\(targetFile), rank=\(targetRank)")
-                                
-                                // Ensure coordinates are within bounds
-                                if targetFile >= 0 && targetFile < 8 && targetRank >= 0 && targetRank < 8,
-                                   let file = File(rawValue: targetFile),
-                                   let rank = Rank(rawValue: targetRank) {
-                                    let targetSquare = Square(file: file, rank: rank)
-                                    print("🎯 MOVE ATTEMPT: \(square) -> \(targetSquare)")
-                                    if targetSquare != square {
-                                        onPieceMove(square, targetSquare)
-                                    } else {
-                                        print("🎯 Same square, no move")
-                                    }
-                                } else {
-                                    print("🎯 TARGET OUT OF BOUNDS: file=\(targetFile), rank=\(targetRank)")
-                                }
-                                
-                                NotificationCenter.default.post(
-                                    name: NSNotification.Name("PieceDragEnded"),
-                                    object: nil
-                                )
-                            }                   )
+                Rectangle()
+                    .fill(Color.clear)
+                    .opacity(isPieceCursorActive ? 0.2 : 0.0) // Only show when cursor is active for visual feedback
             }
             
             if isHighlighted {
@@ -515,18 +479,34 @@ struct InteractiveSquareView: View {
             isPieceCursorActive = false
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MouseDownOnSquare"))) { notification in
-            if let clickedSquare = notification.object as? Square, clickedSquare == square, let piece = piece {
-                print("🎯 MOUSE DOWN ON PIECE: \(piece.type) at \(square)")
-                // Start cursor piece
-                let squareSize = boardSize / 8
-                let centerX = CGFloat(square.file.rawValue) * squareSize + squareSize / 2
-                let centerY = CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
-                
-                DispatchQueue.main.async {
-                    cursorManager.startCursorPiece(piece, from: square, at: CGPoint(x: centerX, y: centerY))
-                    isPieceCursorActive = true
-                    print("🎯 CURSOR ACTIVATED: \(cursorManager.isActive)")
+            NSLog("🎯 SQUARE VIEW: Received MouseDownOnSquare notification for square \(square)")
+            if let clickedSquare = notification.object as? Square {
+                NSLog("🎯 SQUARE VIEW: Clicked square is \(clickedSquare), this square is \(square)")
+                if clickedSquare == square {
+                    NSLog("🎯 SQUARE VIEW: Squares match!")
+                    if let piece = piece {
+                        NSLog("🎯 SQUARE VIEW: Found piece \(piece.type) at \(square)")
+                        // Start cursor piece
+                        let squareSize = boardSize / 8
+                        let centerX = CGFloat(square.file.rawValue) * squareSize + squareSize / 2
+                        let centerY = CGFloat(square.rank.rawValue) * squareSize + squareSize / 2
+                        NSLog("🎯 PIECE PICKUP DEBUG: square=\(square), file.rawValue=\(square.file.rawValue), rank.rawValue=\(square.rank.rawValue)")
+                        NSLog("🎯 PIECE PICKUP DEBUG: squareSize=\(squareSize), centerX=\(centerX), centerY=\(centerY)")
+                        NSLog("🎯 PIECE PICKUP DEBUG: calculated position=\(CGPoint(x: centerX, y: centerY))")
+                        
+                        DispatchQueue.main.async {
+                            cursorManager.startCursorPiece(piece, from: square, at: CGPoint(x: centerX, y: centerY))
+                            isPieceCursorActive = true
+                            NSLog("🎯 SQUARE VIEW: CURSOR ACTIVATED: \(cursorManager.isActive)")
+                        }
+                    } else {
+                        NSLog("🎯 SQUARE VIEW: No piece on this square")
+                    }
+                } else {
+                    NSLog("🎯 SQUARE VIEW: Squares don't match, ignoring")
                 }
+            } else {
+                NSLog("🎯 SQUARE VIEW: Failed to cast notification object to Square")
             }
         }
     }
@@ -542,6 +522,7 @@ struct InteractiveChessBoard: View {
     @ObservedObject var gameViewModel: GameViewModel
     
     @State private var validMoveTargets: Set<Square> = []
+    @State private var debugMessages: [String] = []
     
     private let columns: [GridItem] = Array(repeating: .init(.flexible(), spacing: 0), count: 8)
     
@@ -574,6 +555,11 @@ struct InteractiveChessBoard: View {
             .frame(width: boardSize, height: boardSize)
             .coordinateSpace(name: "ChessBoard")
             
+            // Piece overlay (renders all pieces separately)
+            PieceOverlay(board: board, boardSize: boardSize, cursorManager: cursorManager)
+                .frame(width: boardSize, height: boardSize)
+                .allowsHitTesting(false)
+            
             // Arrow overlay (middle layer)
             ArrowDrawingView(
                 currentArrows: arrowManager.currentArrows,
@@ -600,11 +586,73 @@ struct InteractiveChessBoard: View {
                         break
                     }
                 }
+            
+            // Debug overlay - positioned absolutely to ensure visibility
+            VStack {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("🎯 DEBUG INFO")
+                            .font(.title2)
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.yellow.opacity(0.9))
+                            .border(Color.red, width: 2)
+                        
+                        Text("Cursor Active: \(cursorManager.isActive)")
+                            .font(.body)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.black.opacity(0.8))
+                        
+                        Text("Debug Test: \(Date().timeIntervalSince1970.truncatingRemainder(dividingBy: 100), specifier: "%.1f")")
+                            .font(.body)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.black.opacity(0.8))
+                        
+                        if let sourceSquare = cursorManager.sourceSquare {
+                            Text("Source: \(sourceSquare)")
+                                .font(.body)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Color.black.opacity(0.8))
+                        }
+                        
+                        ForEach(debugMessages.suffix(5), id: \.self) { message in
+                            Text(message)
+                                .font(.body)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Color.black.opacity(0.8))
+                        }
+                        
+                        Button("🔥 TEST DEBUG") {
+                            addDebugMessage("Test message: \(Date().timeIntervalSince1970)")
+                        }
+                        .font(.body)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.9))
+                        .border(Color.blue, width: 2)
+                    }
+                    Spacer()
+                }
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .zIndex(1000)
         }
         .border(Color.black, width: 1)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareSelected"))) { notification in
             if let square = notification.object as? Square {
                 print("🎯 BOARD: Square selected notification for \(square)")
+                addDebugMessage("Square selected: \(square)")
                 gameViewModel.selectSquare(square)
                 updateValidMoveTargets()
             }
@@ -687,6 +735,11 @@ struct InteractiveChessBoard: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SquareTargeted"))) { _ in
             cursorManager.stopCursorPiece()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MouseDownOnSquare"))) { notification in
+            if let square = notification.object as? Square {
+                addDebugMessage("Mouse down on: \(square)")
+            }
+        }
     }
     
     private func updateValidMoveTargets() {
@@ -695,6 +748,15 @@ struct InteractiveChessBoard: View {
             validMoveTargets = newTargets
         }
         print("🎯 BOARD: Updated valid move targets: \(validMoveTargets)")
+    }
+    
+    private func addDebugMessage(_ message: String) {
+        DispatchQueue.main.async {
+            debugMessages.append(message)
+            if debugMessages.count > 10 {
+                debugMessages.removeFirst()
+            }
+        }
     }
 }
 
@@ -743,6 +805,24 @@ class MouseTrackingNSView: NSView {
         wantsLayer = true
         layer?.backgroundColor = NSColor.clear.cgColor
         updateTrackingArea()
+        
+        // Make sure we can receive mouse events
+        NSLog("🎯 MOUSE TRACKING VIEW: setupView called, bounds: \(bounds)")
+    }
+    
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        NSLog("🎯 MOUSE TRACKING VIEW: acceptsFirstMouse called")
+        return true
+    }
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        NSLog("🎯 MOUSE TRACKING VIEW: awakeFromNib called")
+    }
+    
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        NSLog("🎯 MOUSE TRACKING VIEW: viewDidMoveToWindow called, window: \(window != nil)")
     }
     
     private func updateTrackingArea() {
@@ -770,7 +850,10 @@ class MouseTrackingNSView: NSView {
     override func mouseMoved(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
         cursorManager?.updateCursorPosition(location)
-        print("🎯 MOUSE: mouseMoved to \(location)")
+        NSLog("🎯 MOUSE TRACKING: mouseMoved to \(location)")
+        if let square = pointToSquare(location) {
+            NSLog("🎯 MOUSE TRACKING: mouseMoved over square \(square)")
+        }
     }
     
     override func mouseDragged(with event: NSEvent) {
@@ -795,6 +878,9 @@ class MouseTrackingNSView: NSView {
         }
         
         print("🎯 Dragging to location \(location)")
+        if let square = pointToSquare(location) {
+            print("🎯 Dragging over square \(square)")
+        }
     }
     
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -836,8 +922,10 @@ class MouseTrackingNSView: NSView {
     // Handle left-clicks and drags for piece movement
     override func mouseDown(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
+        NSLog("🎯 MOUSE DOWN at location: \(location)")
+        
         if let square = pointToSquare(location) {
-            print("🎯 Left mouse down at \(square)")
+            NSLog("🎯 MOUSE DOWN on square: \(square)")
             dragStartSquare = square
             isDraggingPiece = false
             
@@ -848,6 +936,9 @@ class MouseTrackingNSView: NSView {
                 name: NSNotification.Name("MouseDownOnSquare"),
                 object: square
             )
+            NSLog("🎯 Posted MouseDownOnSquare notification for \(square)")
+        } else {
+            NSLog("🎯 MOUSE DOWN outside valid square")
         }
     }
 
@@ -946,6 +1037,8 @@ class MouseTrackingNSView: NSView {
         let fileIndex = Int(point.x / squareSize)
         let rankIndex = Int(point.y / squareSize)
         
+        NSLog("🎯 POINT TO SQUARE: point=\(point), squareSize=\(squareSize), fileIndex=\(fileIndex), rankIndex=\(rankIndex)")
+        
         guard fileIndex >= 0, fileIndex < 8, rankIndex >= 0, rankIndex < 8,
               let file = File(rawValue: fileIndex),
               let rank = Rank(rawValue: rankIndex) else {
@@ -1028,8 +1121,7 @@ class RightClickView: NSView {
     private func pointToSquare(_ point: CGPoint) -> Square? {
         let squareSize = boardSize / 8
         let fileIndex = Int(point.x / squareSize)
-        let ySquareIndex = Int(point.y / squareSize)
-        let rankIndex = ySquareIndex
+        let rankIndex = Int(point.y / squareSize)
         
         guard fileIndex >= 0, fileIndex < 8, rankIndex >= 0, rankIndex < 8,
               let file = File(rawValue: fileIndex),

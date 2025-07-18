@@ -1,0 +1,32 @@
+{
+  "source": "/Users/danu/development/Initiative/ArrowDrawing.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "🎯 DEBUG INFO",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 587
+        }
+      },
+      {
+        "comment": "",
+        "key": "Debug Test: %.1f",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 602
+        }
+      },
+      {
+        "comment": "",
+        "key": "🔥 TEST DEBUG",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 627
+        }
+      }
+    ]
+  },
+  "version": 1
+}

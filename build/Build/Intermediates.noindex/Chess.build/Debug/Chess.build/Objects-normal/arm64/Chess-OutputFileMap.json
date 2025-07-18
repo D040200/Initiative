@@ -1,0 +1,158 @@
+{
+  "" : {
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Chess-master.dia",
+    "emit-module-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Chess-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Chess-master-emit-module.dia",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Chess-master.swiftdeps"
+  },
+  "/Users/danu/development/Initiative/ArrowDrawing.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ArrowDrawing~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/Board.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Board~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/ChessApp.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessApp~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/ChessLocalDataManager.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessLocalDataManager~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/ContentView.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/Game.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Game~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/LocalDatabaseView.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/LocalDatabaseView~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/Move.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/Move~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/MoveHighlighting.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/MoveHighlighting~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/PGN.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/PGN~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/SquareView.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/SquareView~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/DerivedSources/CoreDataGenerated/ChessDataModel/ChessDataModel+CoreDataModel.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessDataModel+CoreDataModel~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/DerivedSources/CoreDataGenerated/ChessDataModel/ChessGameEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/DerivedSources/CoreDataGenerated/ChessDataModel/ChessGameEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/ChessGameEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/danu/development/Initiative/build/Build/Intermediates.noindex/Chess.build/Debug/Chess.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}
