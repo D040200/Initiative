@@ -3,6 +3,55 @@ import SwiftUI
 import AppKit
 import Foundation
 
+// MARK: - Coordinate System Handler
+struct BoardCoordinateSystem {
+    let boardSize: CGFloat
+    
+    // Convert NSView point to chess square
+    func nsViewPointToSquare(_ point: CGPoint) -> Square? {
+        let squareSize = boardSize / 8
+        let fileIndex = Int(point.x / squareSize)
+        
+        // NSView has Y=0 at bottom, but our board visual has rank 8 at top
+        // The board is created with (0..<8).reversed(), so:
+        // - Visual top row = rankIndex 7 = rank 7
+        // - Visual bottom row = rankIndex 0 = rank 0
+        
+        // Click at NSView bottom (y≈0) should map to rank 0
+        // Click at NSView top (y≈boardSize) should map to rank 7
+        let rankIndex = Int(point.y / squareSize)
+        
+        guard fileIndex >= 0, fileIndex < 8, rankIndex >= 0, rankIndex < 8,
+              let file = File(rawValue: fileIndex),
+              let rank = Rank(rawValue: rankIndex) else {
+            return nil
+        }
+        
+        return Square(file: file, rank: rank)
+    }
+    
+    // Convert SwiftUI point to chess square
+    func swiftUIPointToSquare(_ point: CGPoint) -> Square? {
+        // SwiftUI has Y=0 at top, so we need to flip
+        let flippedPoint = CGPoint(x: point.x, y: boardSize - point.y)
+        return nsViewPointToSquare(flippedPoint)
+    }
+    
+    // Convert chess square to visual center point (for SwiftUI)
+    func squareToSwiftUIPoint(_ square: Square) -> CGPoint {
+        let squareSize = boardSize / 8
+        let x = CGFloat(square.file.rawValue) * squareSize + squareSize / 2
+        // For SwiftUI: rank 8 should be at top (y=0), rank 1 at bottom
+        let y = CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
+        return CGPoint(x: x, y: y)
+    }
+    
+    // Convert NSView mouse location to SwiftUI coordinates
+    func nsViewToSwiftUI(_ point: CGPoint) -> CGPoint {
+        return CGPoint(x: point.x, y: boardSize - point.y)
+    }
+}
+
 // MARK: - Circle Highlight Data Structure
 struct ChessCircle: Identifiable, Equatable {
     let id = UUID()
@@ -486,16 +535,15 @@ struct InteractiveSquareView: View {
                     NSLog("🎯 SQUARE VIEW: Squares match!")
                     if let piece = piece {
                         NSLog("🎯 SQUARE VIEW: Found piece \(piece.type) at \(square)")
-                        // Start cursor piece
-                        let squareSize = boardSize / 8
-                        let centerX = CGFloat(square.file.rawValue) * squareSize + squareSize / 2
-                        let centerY = CGFloat(square.rank.rawValue) * squareSize + squareSize / 2
-                        NSLog("🎯 PIECE PICKUP DEBUG: square=\(square), file.rawValue=\(square.file.rawValue), rank.rawValue=\(square.rank.rawValue)")
-                        NSLog("🎯 PIECE PICKUP DEBUG: squareSize=\(squareSize), centerX=\(centerX), centerY=\(centerY)")
-                        NSLog("🎯 PIECE PICKUP DEBUG: calculated position=\(CGPoint(x: centerX, y: centerY))")
+                        
+                        // Use centralized coordinate system
+                        let coords = BoardCoordinateSystem(boardSize: boardSize)
+                        let centerPoint = coords.squareToSwiftUIPoint(square)
+                        
+                        NSLog("🎯 PIECE PICKUP DEBUG: square=\(square), centerPoint=\(centerPoint)")
                         
                         DispatchQueue.main.async {
-                            cursorManager.startCursorPiece(piece, from: square, at: CGPoint(x: centerX, y: centerY))
+                            cursorManager.startCursorPiece(piece, from: square, at: centerPoint)
                             isPieceCursorActive = true
                             NSLog("🎯 SQUARE VIEW: CURSOR ACTIVATED: \(cursorManager.isActive)")
                         }
@@ -849,16 +897,21 @@ class MouseTrackingNSView: NSView {
     
     override func mouseMoved(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
-        cursorManager?.updateCursorPosition(location)
-        NSLog("🎯 MOUSE TRACKING: mouseMoved to \(location)")
-        if let square = pointToSquare(location) {
+        let coords = BoardCoordinateSystem(boardSize: boardSize)
+        let swiftUILocation = coords.nsViewToSwiftUI(location)
+        cursorManager?.updateCursorPosition(swiftUILocation)
+        
+        NSLog("🎯 MOUSE TRACKING: mouseMoved NSView: \(location), SwiftUI: \(swiftUILocation)")
+        if let square = coords.nsViewPointToSquare(location) {
             NSLog("🎯 MOUSE TRACKING: mouseMoved over square \(square)")
         }
     }
-    
+
     override func mouseDragged(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
-        cursorManager?.updateCursorPosition(location)
+        let coords = BoardCoordinateSystem(boardSize: boardSize)
+        let swiftUILocation = coords.nsViewToSwiftUI(location)
+        cursorManager?.updateCursorPosition(swiftUILocation)
         
         // Handle piece dragging
         guard let startSquare = dragStartSquare else { return }
@@ -878,10 +931,11 @@ class MouseTrackingNSView: NSView {
         }
         
         print("🎯 Dragging to location \(location)")
-        if let square = pointToSquare(location) {
+        if let square = coords.nsViewPointToSquare(location) {
             print("🎯 Dragging over square \(square)")
         }
     }
+
     
     override func hitTest(_ point: NSPoint) -> NSView? {
         return self
@@ -1033,19 +1087,10 @@ class MouseTrackingNSView: NSView {
     }
     
     private func pointToSquare(_ point: CGPoint) -> Square? {
-        let squareSize = boardSize / 8
-        let fileIndex = Int(point.x / squareSize)
-        let rankIndex = Int(point.y / squareSize)
-        
-        NSLog("🎯 POINT TO SQUARE: point=\(point), squareSize=\(squareSize), fileIndex=\(fileIndex), rankIndex=\(rankIndex)")
-        
-        guard fileIndex >= 0, fileIndex < 8, rankIndex >= 0, rankIndex < 8,
-              let file = File(rawValue: fileIndex),
-              let rank = Rank(rawValue: rankIndex) else {
-            return nil
-        }
-        
-        return Square(file: file, rank: rank)
+        let coords = BoardCoordinateSystem(boardSize: boardSize)
+        let square = coords.nsViewPointToSquare(point)
+        NSLog("🎯 MouseTrackingNSView.pointToSquare: point=\(point) -> square=\(String(describing: square))")
+        return square
     }
 }
 
