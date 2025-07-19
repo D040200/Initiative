@@ -185,8 +185,6 @@ struct Piece: Equatable {
         }
         self.color = isWhite ? .white : .black
     }
-    
-
 }
 
 // MARK: - Board Object
@@ -238,9 +236,8 @@ struct Board {
             blackBishops: 0b00100100_00000000_00000000_00000000_00000000_00000000_00000000_00000000,
             blackRooks:   0b10000001_00000000_00000000_00000000_00000000_00000000_00000000_00000000,
             blackQueens:  0b00001000_00000000_00000000_00000000_00000000_00000000_00000000_00000000,
-            blackKing:    0b00010000_00000000_00000000_00000000_00000000_00000000_00000000_00010000
+            blackKing:    0b00010000_00000000_00000000_00000000_00000000_00000000_00000000_00000000
         )
-        
     }
     
     init?(fen: String) {
@@ -357,14 +354,16 @@ struct Board {
         // 2. Handle captures
         if let captured = move.capturedPiece {
             if move.flag == .enPassantCapture {
-                // Square.init?(file:rank:) returns an optional, so we must safely unwrap it or force unwrap if we're certain it exists.
-                // Assuming en-passant moves use valid squares, force unwrapping is acceptable here.
+                // For en-passant, the captured pawn is not on the destination square
+                // It's on the same rank as the capturing pawn, but on the file of the destination
                 let capturedPawnSquare: Square = move.piece.color == .white ?
                 Square(file: move.to.file, rank: .five) :
                 Square(file: move.to.file, rank: .four)
                 removePiece(at: capturedPawnSquare, pieceColor: captured.color, pieceType: captured.type)
+                print("🔍 BOARD: Removed en-passant captured pawn at \(capturedPawnSquare)")
             } else {
                 removePiece(at: move.to, pieceColor: captured.color, pieceType: captured.type)
+                print("🔍 BOARD: Removed captured piece at \(move.to)")
             }
         }
         
@@ -411,6 +410,7 @@ struct Board {
     }
 }
 
+// MARK: - Path Checking Extension
 extension Board {
     func isPathClear(from start: Square, to end: Square, ignoring: Piece? = nil) -> Bool {
         let fileDiff = end.file.rawValue - start.file.rawValue
@@ -448,3 +448,298 @@ extension Board {
     }
 }
 
+// MARK: - Move Generation Extension
+extension Board {
+    func generateLegalMoves(for color: PieceColor) -> [Move] {
+        var legalMoves: [Move] = []
+        
+        print("🔍 BOARD: Starting move generation for \(color)")
+        
+        for square in Square.all {
+            if let piece = self.piece(at: square), piece.color == color {
+                print("🔍 BOARD: Found \(piece.type) at \(square)")
+                let moves = generateMovesForPiece(piece, at: square)
+                print("🔍 BOARD: Generated \(moves.count) moves for \(piece.type) at \(square)")
+                if moves.count > 0 {
+                    for move in moves.prefix(3) {
+                        print("🔍 BOARD:   \(move.from) -> \(move.to) [\(move.flag)]")
+                    }
+                    if moves.count > 3 {
+                        print("🔍 BOARD:   ... and \(moves.count - 3) more")
+                    }
+                }
+                legalMoves.append(contentsOf: moves)
+            }
+        }
+        
+        print("🔍 BOARD: Total moves generated: \(legalMoves.count)")
+        return legalMoves
+    }
+    
+    private func generateMovesForPiece(_ piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        
+        switch piece.type {
+        case .pawn:
+            moves.append(contentsOf: generatePawnMoves(for: piece, at: square))
+        case .knight:
+            moves.append(contentsOf: generateKnightMoves(for: piece, at: square))
+        case .bishop:
+            moves.append(contentsOf: generateBishopMoves(for: piece, at: square))
+        case .rook:
+            moves.append(contentsOf: generateRookMoves(for: piece, at: square))
+        case .queen:
+            moves.append(contentsOf: generateQueenMoves(for: piece, at: square))
+        case .king:
+            moves.append(contentsOf: generateKingMoves(for: piece, at: square))
+        }
+        
+        return moves
+    }
+    
+    private func generatePawnMoves(for piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let direction = piece.color == .white ? 1 : -1
+        
+        print("🔍 PAWN: Generating moves for \(piece.color) pawn at \(square), direction=\(direction)")
+        
+        // Forward moves
+        if let oneSquareUp = Rank(rawValue: square.rank.rawValue + direction) {
+            let targetSquare = Square(file: square.file, rank: oneSquareUp)
+            print("🔍 PAWN: Checking one square forward to \(targetSquare)")
+            
+            if self.piece(at: targetSquare) == nil {
+                // Check for promotion
+                let promotionRank = piece.color == .white ? Rank.eight : Rank.one
+                if targetSquare.rank == promotionRank {
+                    // Add promotion moves with captured piece properly set
+                    for promotionType in [PieceType.queen, .rook, .bishop, .knight] {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: nil, flag: .promotion(promotionType)))
+                    }
+                    print("🔍 PAWN: Added promotion moves to \(targetSquare)")
+                } else {
+                    // Normal forward move
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: nil, flag: .normal))
+                    print("🔍 PAWN: Added forward move to \(targetSquare)")
+                    
+                    // Double move from starting position
+                    let startingRank = piece.color == .white ? Rank.two : Rank.seven
+                    if square.rank == startingRank,
+                       let twoSquaresUp = Rank(rawValue: square.rank.rawValue + 2 * direction) {
+                        let doubleTargetSquare = Square(file: square.file, rank: twoSquaresUp)
+                        print("🔍 PAWN: Checking double move to \(doubleTargetSquare)")
+                        
+                        if self.piece(at: doubleTargetSquare) == nil {
+                            moves.append(Move(from: square, to: doubleTargetSquare, piece: piece, capturedPiece: nil, flag: .doublePawnPush))
+                            print("🔍 PAWN: Added double move to \(doubleTargetSquare)")
+                        }
+                    }
+                }
+            } else {
+                print("🔍 PAWN: Forward square \(targetSquare) is occupied")
+            }
+        }
+        
+        // Captures (including promotion captures)
+        for fileOffset in [-1, 1] {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + direction) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                print("🔍 PAWN: Checking capture to \(targetSquare)")
+                
+                if let targetPiece = self.piece(at: targetSquare), targetPiece.color != piece.color {
+                    // Check for promotion capture
+                    let promotionRank = piece.color == .white ? Rank.eight : Rank.one
+                    if targetSquare.rank == promotionRank {
+                        // Add promotion captures
+                        for promotionType in [PieceType.queen, .rook, .bishop, .knight] {
+                            moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .promotion(promotionType)))
+                        }
+                        print("🔍 PAWN: Added promotion capture moves to \(targetSquare)")
+                    } else {
+                        // Normal capture
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                        print("🔍 PAWN: Added capture move to \(targetSquare)")
+                    }
+                }
+                
+                // En-passant capture
+                // White pawns capture en-passant on rank 5, black pawns on rank 4
+                let enPassantRank = piece.color == .white ? Rank.five : Rank.four
+                if square.rank == enPassantRank && self.piece(at: targetSquare) == nil {
+                    let capturedPawnSquare = Square(file: newFile, rank: square.rank)
+                    if let capturedPawn = self.piece(at: capturedPawnSquare),
+                       capturedPawn.type == .pawn,
+                       capturedPawn.color != piece.color {
+                        // TODO: Need to verify the captured pawn just made a double move
+                        // For now, allow en-passant if there's an enemy pawn next to us
+                        moves.append(Move(
+                            from: square,
+                            to: targetSquare,
+                            piece: piece,
+                            capturedPiece: capturedPawn,
+                            flag: .enPassantCapture
+                        ))
+                        print("🔍 PAWN: Added en-passant capture to \(targetSquare)")
+                    }
+                }
+            }
+        }
+        
+        print("🔍 PAWN: Generated \(moves.count) moves total")
+        return moves
+    }
+    
+    private func generateKnightMoves(for piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let knightMoves = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+        
+        for (fileOffset, rankOffset) in knightMoves {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                if let targetPiece = self.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: nil, flag: .normal))
+                }
+            }
+        }
+        
+        return moves
+    }
+    
+    private func generateBishopMoves(for piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(for: piece, at: square, directions: [(-1, -1), (-1, 1), (1, -1), (1, 1)])
+    }
+    
+    private func generateRookMoves(for piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(for: piece, at: square, directions: [(-1, 0), (1, 0), (0, -1), (0, 1)])
+    }
+    
+    private func generateQueenMoves(for piece: Piece, at square: Square) -> [Move] {
+        return generateSlidingMoves(for: piece, at: square, directions: [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
+    }
+    
+    private func generateKingMoves(for piece: Piece, at square: Square) -> [Move] {
+        var moves: [Move] = []
+        let kingMoves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        
+        // Regular king moves
+        for (fileOffset, rankOffset) in kingMoves {
+            if let newFile = File(rawValue: square.file.rawValue + fileOffset),
+               let newRank = Rank(rawValue: square.rank.rawValue + rankOffset) {
+                let targetSquare = Square(file: newFile, rank: newRank)
+                if let targetPiece = self.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: nil, flag: .normal))
+                }
+            }
+        }
+        
+        // Castling moves
+        // TODO: This is simplified - should check castling rights, king not in check, etc.
+        let kingStartFile = File.E
+        let kingRank = piece.color == .white ? Rank.one : Rank.eight
+        
+        if square.file == kingStartFile && square.rank == kingRank {
+            // King-side castling
+            let rookSquare = Square(file: .H, rank: kingRank)
+            if let rook = self.piece(at: rookSquare),
+               rook.type == .rook,
+               rook.color == piece.color {
+                // Check if squares between king and rook are empty
+                let f = Square(file: .F, rank: kingRank)
+                let g = Square(file: .G, rank: kingRank)
+                if self.piece(at: f) == nil && self.piece(at: g) == nil {
+                    moves.append(Move(
+                        from: square,
+                        to: g,
+                        piece: piece,
+                        capturedPiece: nil,
+                        flag: .kingSideCastling
+                    ))
+                    print("🔍 KING: Added king-side castling")
+                }
+            }
+            
+            // Queen-side castling
+            let queenRookSquare = Square(file: .A, rank: kingRank)
+            if let rook = self.piece(at: queenRookSquare),
+               rook.type == .rook,
+               rook.color == piece.color {
+                // Check if squares between king and rook are empty
+                let b = Square(file: .B, rank: kingRank)
+                let c = Square(file: .C, rank: kingRank)
+                let d = Square(file: .D, rank: kingRank)
+                if self.piece(at: b) == nil &&
+                   self.piece(at: c) == nil &&
+                   self.piece(at: d) == nil {
+                    moves.append(Move(
+                        from: square,
+                        to: c,
+                        piece: piece,
+                        capturedPiece: nil,
+                        flag: .queenSideCastling
+                    ))
+                    print("🔍 KING: Added queen-side castling")
+                }
+            }
+        }
+        
+        return moves
+    }
+    
+    private func generateSlidingMoves(for piece: Piece, at square: Square, directions: [(Int, Int)]) -> [Move] {
+        var moves: [Move] = []
+        
+        for (fileDirection, rankDirection) in directions {
+            var currentFile = square.file.rawValue + fileDirection
+            var currentRank = square.rank.rawValue + rankDirection
+            
+            while let file = File(rawValue: currentFile), let rank = Rank(rawValue: currentRank) {
+                let targetSquare = Square(file: file, rank: rank)
+                
+                if let targetPiece = self.piece(at: targetSquare) {
+                    if targetPiece.color != piece.color {
+                        moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: targetPiece, flag: .capture))
+                    }
+                    break // Can't continue past any piece
+                } else {
+                    moves.append(Move(from: square, to: targetSquare, piece: piece, capturedPiece: nil, flag: .normal))
+                }
+                
+                currentFile += fileDirection
+                currentRank += rankDirection
+            }
+        }
+        
+        return moves
+    }
+    
+    // MARK: - Move Validation
+    func isMoveLegal(_ move: Move) -> Bool {
+        // Basic validation - piece exists and can move to target
+        guard let piece = self.piece(at: move.from) else { return false }
+        guard piece == move.piece else { return false }
+        
+        // Check if target square is valid
+        if let targetPiece = self.piece(at: move.to) {
+            // Can't capture own piece
+            if targetPiece.color == piece.color { return false }
+        }
+        
+        // For sliding pieces, check if path is clear
+        switch piece.type {
+        case .bishop, .rook, .queen:
+            return isPathClear(from: move.from, to: move.to)
+        default:
+            return true // Other pieces don't need path checking
+        }
+    }
+}

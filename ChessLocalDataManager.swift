@@ -57,23 +57,82 @@ class ChessLocalDataManager: ObservableObject {
     }
     
     func saveGame(from pgn: PGN, title: String? = nil) {
-        let gameEntity = ChessGameEntity(context: context)
-        gameEntity.id = UUID()
-        gameEntity.title = title ?? pgn.tags["Event"] ?? "Untitled Game"
-        gameEntity.whitePlayer = pgn.tags["White"] ?? "Unknown"
-        gameEntity.blackPlayer = pgn.tags["Black"] ?? "Unknown"
-        gameEntity.result = pgn.result ?? "*"
-        gameEntity.event = pgn.tags["Event"]
-        gameEntity.site = pgn.tags["Site"]
-        gameEntity.date = pgn.tags["Date"]
-        gameEntity.round = pgn.tags["Round"]
-        gameEntity.eco = pgn.tags["ECO"]
-        gameEntity.pgnString = generatePGNString(from: pgn)
-        gameEntity.dateCreated = Date()
-        gameEntity.lastModified = Date()
-        
-        save()
-    }
+         // Check if we're updating an existing game
+         let existingGame = savedGames.first { game in
+             game.title == title ||
+             (game.whitePlayer == pgn.tags["White"] &&
+              game.blackPlayer == pgn.tags["Black"] &&
+              game.event == pgn.tags["Event"])
+         }
+         
+         let gameEntity: ChessGameEntity
+         if let existing = existingGame {
+             gameEntity = existing
+             gameEntity.lastModified = Date()
+         } else {
+             gameEntity = ChessGameEntity(context: context)
+             gameEntity.id = UUID()
+             gameEntity.dateCreated = Date()
+         }
+         
+         gameEntity.title = title ?? pgn.tags["Event"] ?? "Untitled Game"
+         gameEntity.whitePlayer = pgn.tags["White"] ?? "Unknown"
+         gameEntity.blackPlayer = pgn.tags["Black"] ?? "Unknown"
+         gameEntity.result = pgn.result ?? "*"
+         gameEntity.event = pgn.tags["Event"]
+         gameEntity.site = pgn.tags["Site"]
+         gameEntity.date = pgn.tags["Date"]
+         gameEntity.round = pgn.tags["Round"]
+         gameEntity.eco = pgn.tags["ECO"]
+         gameEntity.pgnString = generatePGNString(from: pgn)
+         gameEntity.lastModified = Date()
+         
+         save()
+     }
+    
+    private func generatePGNString(from pgn: PGN) -> String {
+            var pgnString = ""
+            
+            // Add tags
+            for (key, value) in pgn.tags.sorted(by: { $0.key < $1.key }) {
+                pgnString += "[\(key) \"\(value)\"]\n"
+            }
+            
+            pgnString += "\n"
+            
+            // Add main moves with variations
+            var moveText = ""
+            for (index, move) in pgn.moves.enumerated() {
+                if index % 2 == 0 {
+                    moveText += "\(index/2 + 1). "
+                }
+                moveText += move + " "
+                
+                // Add variations that start after this move
+                let variationsAtThisMove = pgn.variations.filter { $0.startingMoveIndex == index + 1 }
+                for variation in variationsAtThisMove {
+                    moveText += "("
+                    for (varIndex, varMove) in variation.moves.enumerated() {
+                        if varIndex % 2 == 0 && varIndex > 0 {
+                            moveText += "\((index + varIndex)/2 + 1)... "
+                        }
+                        moveText += varMove + " "
+                    }
+                    if let comment = variation.comment {
+                        moveText += "{ \(comment) } "
+                    }
+                    moveText += ") "
+                }
+            }
+            
+            pgnString += moveText.trimmingCharacters(in: .whitespaces)
+            
+            if let result = pgn.result {
+                pgnString += " \(result)"
+            }
+            
+            return pgnString
+        }
     
     func deleteGame(_ game: ChessGameEntity) {
         context.delete(game)
@@ -89,27 +148,6 @@ class ChessLocalDataManager: ObservableObject {
         }
         game.lastModified = Date()
         save()
-    }
-    
-    // Convert PGN back to string format
-    private func generatePGNString(from pgn: PGN) -> String {
-        var pgnString = ""
-        
-        // Add tags
-        for (key, value) in pgn.tags.sorted(by: { $0.key < $1.key }) {
-            pgnString += "[\(key) \"\(value)\"]\n"
-        }
-        
-        pgnString += "\n"
-        
-        // Add moves
-        pgnString += pgn.moves.joined(separator: " ")
-        
-        if let result = pgn.result {
-            pgnString += " \(result)"
-        }
-        
-        return pgnString
     }
     
     // Search functionality

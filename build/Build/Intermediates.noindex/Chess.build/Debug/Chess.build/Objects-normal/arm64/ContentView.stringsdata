@@ -1,0 +1,400 @@
+{
+  "source": "/Users/danu/development/Initiative/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Chess App",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 470
+        }
+      },
+      {
+        "comment": "",
+        "key": "Main",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 479
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ vs %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 602
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Game Open",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 687
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select a game from the database to start analysis",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 691
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recent Games:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 697
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ vs %@",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 711
+        }
+      },
+      {
+        "comment": "",
+        "key": "No game loaded.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1001
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 773
+        }
+      },
+      {
+        "comment": "",
+        "key": "Event: %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 780
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ vs %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 781
+        }
+      },
+      {
+        "comment": "",
+        "key": "Moves",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 828
+        }
+      },
+      {
+        "comment": "",
+        "key": "VARIATION",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 833
+        }
+      },
+      {
+        "comment": "",
+        "key": "Exit Variation",
+        "location": {
+          "startingColumn": 40,
+          "startingLine": 841
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld.",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 856
+        }
+      },
+      {
+        "comment": "",
+        "key": "Variation:",
+        "location": {
+          "startingColumn": 58,
+          "startingLine": 903
+        }
+      },
+      {
+        "comment": "",
+        "key": "Load",
+        "location": {
+          "startingColumn": 60,
+          "startingLine": 907
+        }
+      },
+      {
+        "comment": "",
+        "key": "Current Variation:",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 929
+        }
+      },
+      {
+        "comment": "",
+        "key": "◀◀",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 971
+        }
+      },
+      {
+        "comment": "",
+        "key": "◀ Previous",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 976
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save Game",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 981
+        }
+      },
+      {
+        "comment": "",
+        "key": "Next ▶",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 988
+        }
+      },
+      {
+        "comment": "",
+        "key": "▶▶",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 993
+        }
+      },
+      {
+        "comment": "",
+        "key": "Game Database",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1231
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1107
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total Games",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1110
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1116
+        }
+      },
+      {
+        "comment": "",
+        "key": "Wins",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1120
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1126
+        }
+      },
+      {
+        "comment": "",
+        "key": "Losses",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1130
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1136
+        }
+      },
+      {
+        "comment": "",
+        "key": "Draws",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1140
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filter",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 1168
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search games, players, events...",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 1156
+        }
+      },
+      {
+        "comment": "",
+        "key": "Clear",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 1160
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ vs %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1186
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1272
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search through your chess games and positions",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1275
+        }
+      },
+      {
+        "comment": "",
+        "key": "Opening Repertoire",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1286
+        }
+      },
+      {
+        "comment": "",
+        "key": "Build and study your opening repertoire",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1289
+        }
+      },
+      {
+        "comment": "",
+        "key": "Endgames",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1300
+        }
+      },
+      {
+        "comment": "",
+        "key": "Master essential endgame patterns",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1303
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tactics Puzzles",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1314
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sharpen your tactical vision",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1317
+        }
+      },
+      {
+        "comment": "",
+        "key": "Engine Analysis",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1328
+        }
+      },
+      {
+        "comment": "",
+        "key": "Computer analysis of positions",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1331
+        }
+      },
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1342
+        }
+      },
+      {
+        "comment": "",
+        "key": "Customize your chess app",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1345
+        }
+      },
+      {
+        "comment": "",
+        "key": "Test Button",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 1349
+        }
+      }
+    ]
+  },
+  "version": 1
+}

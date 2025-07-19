@@ -1,4 +1,4 @@
-// ContentView.swift - Enhanced with move highlighting
+// ContentView.swift - Enhanced with move highlighting and interaction
 import SwiftUI
 
 // MARK: - Game Tab Data
@@ -61,7 +61,7 @@ class OpenGamesManager: ObservableObject {
     }
 }
 
-// MARK: - Enhanced Game View Model with Move Highlighting
+// MARK: - Enhanced Game View Model with Move Interaction
 class GameViewModel: ObservableObject {
     @Published var game: Game = Game()
     @Published var currentMoveIndex: Int = 0
@@ -69,6 +69,12 @@ class GameViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var gameTitle: String = "No Game"
     @Published var highlightManager = MoveHighlightManager()
+    
+    // NEW: Move interaction properties
+    @Published var selectedSquare: Square? = nil
+    @Published var validMoves: [Move] = []
+    @Published var currentVariation: GameVariation? = nil
+    @Published var isInVariationMode = false
     
     var boardHistory: [Board] = []
     private var moveHistory: [Move] = [] // Track the actual moves made
@@ -186,6 +192,243 @@ class GameViewModel: ObservableObject {
         highlightManager.highlightMove(lastMove)
     }
     
+    // MARK: - NEW: Move Interaction Methods
+    
+    func selectSquare(_ square: Square) {
+        print("🔍 GameViewModel.selectSquare called with: \(square)")
+        
+        // Clear previous selection
+        validMoves.removeAll()
+        
+        // If clicking on the same square, deselect
+        if selectedSquare == square {
+            selectedSquare = nil
+            print("🔍 Deselected square \(square)")
+            return
+        }
+        
+        // If there's a piece on this square, select it (ignore color for now)
+        if let piece = game.board.piece(at: square) {
+            print("🔍 Found piece: \(piece.type) at \(square)")
+            selectedSquare = square
+            // Generate valid moves for this piece
+            validMoves = generateValidMovesForPiece(at: square)
+            print("🔍 Selected \(piece.type) at \(square), found \(validMoves.count) valid moves")
+            for move in validMoves.prefix(3) {
+                print("🔍   Valid move: \(move.to)")
+            }
+        } else {
+            print("🔍 No piece found at \(square)")
+        }
+    }
+    func attemptMove(from: Square, to: Square) {
+        print("🚀 GameViewModel.attemptMove called: \(from) -> \(to)")
+        
+        guard let piece = game.board.piece(at: from) else {
+            print("🚀 No piece at source square \(from)")
+            return
+        }
+        
+        print("🚀 Found piece: \(piece.type)")
+        
+        // CRITICAL FIX: If we don't have valid moves for this piece, generate them now
+        if selectedSquare != from || validMoves.isEmpty {
+            print("🚀 No valid moves cached, generating for drag move...")
+            selectSquare(from)
+        }
+        
+        print("🚀 Now have \(validMoves.count) valid moves to check against")
+        
+        // Find the exact valid move that matches this from/to combination
+        if let validMove = validMoves.first(where: { $0.from == from && $0.to == to }) {
+            print("🚀 Found valid move: \(validMove.from) -> \(validMove.to) [\(validMove.flag)]")
+            executeMove(validMove)
+        } else {
+            print("🚀 Invalid move attempted: \(piece.type) from \(from) to \(to)")
+            print("🚀 Valid moves are:")
+            for validMove in validMoves {
+                print("🚀   \(validMove.from) -> \(validMove.to) [\(validMove.flag)]")
+            }
+        }
+        
+        // Clear selection after move attempt
+        selectedSquare = nil
+        validMoves.removeAll()
+    }
+    private func generateValidMovesForPiece(at square: Square) -> [Move] {
+        guard let piece = game.board.piece(at: square) else {
+            print("🔍 No piece found at \(square)")
+            return []
+        }
+        
+        print("🔍 Trying BOARD system for \(piece.type) at \(square)")
+        
+        // Always try the proper board move generation first
+        let boardMoves = game.board.generateLegalMoves(for: piece.color)
+            .filter { $0.from == square }
+        
+        print("🔍 BOARD system generated \(boardMoves.count) moves")
+        
+        // Board system should work - use it!
+        print("🔍 Using BOARD system moves:")
+        for move in boardMoves.prefix(5) {
+            print("🔍   \(move.from) -> \(move.to) [\(move.flag)]")
+        }
+        
+        // Check if it's the correct player's turn
+        // Use the game's activeColor when at the end of the game, otherwise calculate from position
+        let currentPlayer: PieceColor
+        if currentMoveIndex == boardHistory.count - 1 {
+            // At the end of the game, use the game's activeColor
+            currentPlayer = game.activeColor
+        } else {
+            // When viewing historical positions, calculate from move index
+            if isInVariationMode && currentVariation != nil {
+                let baseMove = currentVariation!.startingMoveIndex
+                let variationMoves = currentVariation!.moves.count
+                let totalMoves = baseMove + variationMoves
+                currentPlayer = totalMoves % 2 == 0 ? .white : .black
+            } else {
+                currentPlayer = currentMoveIndex % 2 == 0 ? .white : .black
+            }
+        }
+        
+        guard piece.color == currentPlayer else {
+            print("🔍 Wrong color - piece is \(piece.color), current player is \(currentPlayer)")
+            return []
+        }
+        
+        return boardMoves
+    }
+
+    // MARK: - Move Validation and Execution
+
+    private var totalMovesPlayed: Int {
+        return (pgnGame?.moves.count ?? 0) + (currentVariation?.moves.count ?? 0)
+    }
+    
+    // Move validation is now handled directly in attemptMove by finding the exact valid move
+    
+    private func executeMove(_ move: Move) {
+        // For promotion, we might want to ask the user which piece to promote to
+        // For now, auto-promote to queen
+        var finalMove = move
+        if case .promotion(_) = move.flag {
+            // Find the actual promotion move from valid moves (default to queen)
+            if let queenPromotion = validMoves.first(where: {
+                $0.from == move.from &&
+                $0.to == move.to &&
+                $0.flag == .promotion(.queen)
+            }) {
+                finalMove = queenPromotion
+                print("🚀 Auto-promoting to queen: \(finalMove.from) -> \(finalMove.to)")
+            } else {
+                print("🚀 Could not find queen promotion move, using original move")
+            }
+        }
+        // Convert move to SAN notation
+        do {
+            let sanMove = try convertMoveToSAN(finalMove)
+            
+            if isInVariationMode || currentVariation != nil {
+                // Add to current variation
+                if currentVariation == nil {
+                    currentVariation = GameVariation(
+                        moves: [sanMove],
+                        startingMoveIndex: currentMoveIndex
+                    )
+                } else {
+                    currentVariation!.moves.append(sanMove)
+                }
+                isInVariationMode = true
+            } else {
+                // Start a new variation if we're not at the end of the main line
+                if currentMoveIndex < (pgnGame?.moves.count ?? 0) {
+                    currentVariation = GameVariation(
+                        moves: [sanMove],
+                        startingMoveIndex: currentMoveIndex
+                    )
+                    isInVariationMode = true
+                } else {
+                    // Add to main line if we're at the end
+                    pgnGame?.moves.append(sanMove)
+                }
+            }
+            
+            // Apply the move to the board
+            game.makeMove(finalMove)
+            boardHistory.append(game.board)
+            currentMoveIndex = boardHistory.count - 1
+            
+            // Save the updated game to database
+            saveGameToDatabase()
+            
+            print("Move executed: \(sanMove)")
+            
+        } catch {
+            print("Error converting move to SAN: \(error)")
+        }
+    }
+    
+    private func convertMoveToSAN(_ move: Move) throws -> String {
+        // This is a simplified SAN conversion - you might want to use a more robust implementation
+        var san = ""
+        
+        // Piece prefix (except for pawns)
+        if move.piece.type != .pawn {
+            san += String(move.piece.type.character).uppercased()
+        }
+        
+        // Source file for pawn captures
+        if move.piece.type == .pawn && move.capturedPiece != nil {
+            san += move.from.file.description
+        }
+        
+        // Capture indicator
+        if move.capturedPiece != nil {
+            san += "x"
+        }
+        
+        // Destination square
+        san += move.to.description
+        
+        // Promotion
+        if case .promotion(let pieceType) = move.flag {
+            san += "=" + String(pieceType.character).uppercased()
+        }
+        
+        return san
+    }
+    
+    private func saveGameToDatabase() {
+        guard var pgn = pgnGame else { return }
+        
+        // Add current variation to PGN if it exists
+        if let variation = currentVariation {
+            if !pgn.variations.contains(where: { $0.id == variation.id }) {
+                pgn.variations.append(variation)
+            }
+        }
+        
+        // Update the game in the database
+        ChessLocalDataManager.shared.saveGame(from: pgn, title: gameTitle)
+        print("Game automatically saved to database")
+    }
+    
+    func exitVariationMode() {
+        isInVariationMode = false
+        currentVariation = nil
+        // Return to main line at the variation start point
+        if let variation = currentVariation {
+            navigateToMove(variation.startingMoveIndex)
+        }
+    }
+    
+    func loadVariation(_ variation: GameVariation) {
+        currentVariation = variation
+        isInVariationMode = true
+        navigateToMove(variation.startingMoveIndex)
+    }
 }
 
 // MARK: - Sidebar Pages Enum
@@ -492,7 +735,7 @@ struct EmptyGameAnalysisView: View {
     }
 }
 
-// MARK: - Game Analysis View with Move Highlighting
+// MARK: - Game Analysis View with Move Interaction
 struct GameAnalysisView: View {
     @EnvironmentObject var viewModel: GameViewModel
     @EnvironmentObject var openGamesManager: OpenGamesManager
@@ -546,14 +789,13 @@ struct GameAnalysisView: View {
             // Main content area with board and moves
             if let pgn = viewModel.pgnGame {
                 HStack(spacing: 20) {
-                    // Chess board with highlighting
-                    // Chess board with arrow support
-                    // Chess board with Lichess-style arrows
+                    // Chess board with interaction
                     ZStack(alignment: .bottomTrailing) {
-                        LichessChessBoard(
+                        InteractiveChessBoard(
                             board: viewModel.game.board,
                             highlightManager: viewModel.highlightManager,
-                            boardSize: $openGamesManager.globalBoardSize
+                            boardSize: $openGamesManager.globalBoardSize,
+                            gameViewModel: viewModel
                         )
                         
                         // Resize handle
@@ -579,12 +821,35 @@ struct GameAnalysisView: View {
                             )
                     }
                     
-                    // Moves list panel
+                    // Enhanced moves list panel with variation support
                     VStack(alignment: .leading, spacing: 8) {
+                        // Header with mode indicator
+                        HStack {
+                            Text("Moves")
+                                .font(.headline)
+                            
+                            if viewModel.isInVariationMode {
+                                Spacer()
+                                Text("VARIATION")
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(Color.orange.opacity(0.2))
+                                    .cornerRadius(4)
+                                
+                                Button("Exit Variation") {
+                                    viewModel.exitVariationMode()
+                                }
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            }
+                        }
+                        
                         ScrollViewReader { proxy in
                             ScrollView {
                                 LazyVStack(alignment: .leading, spacing: 4) {
-                                    // Move pairs
+                                    // Display main line moves
                                     ForEach(0..<((pgn.moves.count + 1) / 2), id: \.self) { pairIndex in
                                         HStack(spacing: 8) {
                                             // Move number
@@ -629,12 +894,63 @@ struct GameAnalysisView: View {
                                             
                                             Spacer()
                                         }
+                                        
+                                        // Show variations after this move
+                                        let variationsHere = pgn.variations.filter { $0.startingMoveIndex == pairIndex * 2 + 2 }
+                                        ForEach(variationsHere, id: \.id) { variation in
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                HStack {
+                                                    Text("Variation:")
+                                                        .font(.caption)
+                                                        .foregroundColor(.orange)
+                                                    
+                                                    Button("Load") {
+                                                        viewModel.loadVariation(variation)
+                                                    }
+                                                    .font(.caption)
+                                                    .foregroundColor(.blue)
+                                                }
+                                                
+                                                Text(variation.moves.joined(separator: " "))
+                                                    .font(.system(size: moveListFontSize - 1, design: .monospaced))
+                                                    .foregroundColor(.secondary)
+                                                    .padding(.leading, 16)
+                                                    .background(Color.orange.opacity(0.1))
+                                                    .cornerRadius(4)
+                                            }
+                                            .padding(.leading, 40)
+                                        }
+                                    }
+                                    
+                                    // Show current variation if in variation mode
+                                    if let currentVar = viewModel.currentVariation {
+                                        Divider()
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Current Variation:")
+                                                .font(.caption)
+                                                .foregroundColor(.orange)
+                                            
+                                            ForEach(0..<currentVar.moves.count, id: \.self) { index in
+                                                let move = currentVar.moves[index]
+                                                let moveIndex = currentVar.startingMoveIndex + index + 1
+                                                
+                                                Button(move) {
+                                                    viewModel.navigateToMove(moveIndex)
+                                                }
+                                                .buttonStyle(.plain)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(viewModel.currentMoveIndex == moveIndex ? Color.orange.opacity(0.3) : Color.orange.opacity(0.1))
+                                                .cornerRadius(4)
+                                                .font(.system(size: moveListFontSize, design: .monospaced))
+                                            }
+                                        }
+                                        .padding(.leading, 16)
                                     }
                                 }
                                 .padding(.horizontal, 8)
                             }
                             .onChange(of: viewModel.currentMoveIndex) { oldValue, newValue in
-                                // Auto-scroll to current move
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     proxy.scrollTo("move-\(newValue)", anchor: .center)
                                 }
@@ -1028,6 +1344,15 @@ struct SettingsView: View {
                 .padding()
             Text("Customize your chess app")
                 .foregroundColor(.secondary)
+            
+            VStack(spacing: 20) {
+                Button("Test Button") {
+                    print("Test button pressed")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding()
+            
             Spacer()
         }
         .padding()

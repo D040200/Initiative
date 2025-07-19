@@ -33,3 +33,17 @@ struct Move: Equatable {
         (flag != .normal ? " (\(String(describing: flag)))" : "")
     }
 }
+
+struct GameVariation: Codable, Identifiable {
+    let id = UUID()
+    var moves: [String] // SAN notation
+    var startingMoveIndex: Int // Where this variation branches from
+    var comment: String?
+    var evaluation: Float?
+    
+    init(moves: [String], startingMoveIndex: Int, comment: String? = nil) {
+        self.moves = moves
+        self.startingMoveIndex = startingMoveIndex
+        self.comment = comment
+    }
+}
