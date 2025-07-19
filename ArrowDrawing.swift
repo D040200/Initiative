@@ -230,7 +230,7 @@ struct CircleShape: Shape {
         
         let centerPoint = CGPoint(
             x: CGFloat(square.file.rawValue) * squareSize + squareSize / 2,
-            y: CGFloat(square.rank.rawValue) * squareSize + squareSize / 2
+            y: CGFloat(7 - square.rank.rawValue) * squareSize + squareSize / 2
         )
         
         let radius = squareSize * 0.35
